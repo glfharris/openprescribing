@@ -4,7 +4,11 @@ from django.conf import settings
 from django.views.generic import TemplateView
 from common import utils
 import api
+from django.contrib import admin
 from frontend.views import views as frontend_views
+from frontend.views import profile_views
+
+admin.autodiscover()
 
 urlpatterns = [
     # Static pages.
@@ -62,4 +66,12 @@ urlpatterns = [
     # Other files.
     url(r'^robots\.txt/$', TemplateView.as_view(template_name='robots.txt',
                                                 content_type='text/plain')),
+    # other auth-related pages
+    url(r'^accounts/profile', profile_views.index,
+        name='profile_index'),
+
+    # required by django-allauth
+    url(r'^accounts/', include('allauth.urls')),
+    url(r'^admin/',include(admin.site.urls)),
+
 ]

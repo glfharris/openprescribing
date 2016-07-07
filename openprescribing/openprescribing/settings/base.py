@@ -15,6 +15,9 @@ SITE_ROOT = dirname(DJANGO_ROOT)
 # Site name:
 SITE_NAME = basename(DJANGO_ROOT)
 
+# Site ID (django.contrib.sites framework, required by django-anyauth
+SITE_ID = 1
+
 # Add our project to our pythonpath, this way we don't need to type our project
 # name in our dotted import paths:
 path.append(DJANGO_ROOT)
@@ -161,6 +164,7 @@ ROOT_URLCONF = '%s.urls' % SITE_NAME
 # APP CONFIGURATION
 DJANGO_APPS = (
     # Default Django apps:
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -180,8 +184,17 @@ LOCAL_APPS = (
     'frontend',
 )
 
+ALLAUTH_APPS = (
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    # 'allauth.socialaccount.providers.facebook',
+    # 'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.twitter',
+)
+
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + ALLAUTH_APPS + LOCAL_APPS
 # END APP CONFIGURATION
 
 
@@ -216,6 +229,14 @@ LOGGING = {
     }
 }
 # END LOGGING CONFIGURATION
+
+
+AUTHENTICATION_BACKENDS = (
+    # Needed to login by username in Django admin, regardless of `allauth`
+    'django.contrib.auth.backends.ModelBackend',
+    # `allauth` specific authentication methods, such as login by e-mail
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
 
 
 # WSGI CONFIGURATION
