@@ -4,16 +4,38 @@
 {% block title %}Bookmarks for {{ request.user }} {% endblock %}
 
 {% block content %}
-    <h2>Bookmarks</h2>
+    <h2>Search Bookmarks</h2>
     <ul>
-        {% for bookmark in searchbookmark_list %}
+        {% for bookmark in search_bookmarks %}
         <li>
-          {{ bookmark.name }}
-          {% if bookmark.url %}
-          Run the code to render the graph here
-          {% endif %}
-        </li>
+          <h3>{{ bookmark.name }}</h3>
+          <a class="btn btn-primary" href="/analyse/#{{ bookmark.url }}">View graph</a>
+          <a class="btn btn-warning" href="{% url 'searchbookmark-update' pk=bookmark.id %}">Change</a>
 
+          <form class="form form-inline" method="post" action="{% url 'searchbookmark-delete' pk=bookmark.id %}">
+            {% csrf_token %}
+            <input type="submit" class="btn btn-danger" value="delete">
+          </form>
+
+        </li>
         {% endfor %}
     </ul>
+
+    <h2>Org Bookmarks</h2>
+    <ul>
+        {% for bookmark in org_bookmarks %}
+        <li>
+          <h3>{{ bookmark.name }}</h3>
+          <a class="btn btn-primary" href="{{ bookmark.dashboard_url }}">View graph</a>
+          <a class="btn btn-warning" href="{% url 'orgbookmark-update' pk=bookmark.id %}">Change</a>
+
+          <form class="form form-inline" method="post" action="{% url 'orgbookmark-delete' pk=bookmark.id %}">
+            {% csrf_token %}
+            <input type="submit" class="btn btn-danger" value="delete">
+          </form>
+
+        </li>
+        {% endfor %}
+    </ul>
+
 {% endblock %}

@@ -21,6 +21,9 @@
 <p>Closed: {{ ccg.close_date }}</p>
 {% endif %}
 
+<a href="{% url 'orgbookmark-add' %}?pct={{ ccg.code }}" class="btn">Follow this CCG</a>
+
+
 <p>Practices currently in this CCG:</p>
 <ul class="list-unstyled" id="practices">
 {% for p in practices %}

@@ -6,21 +6,6 @@ from validators import isAlphaNumeric
 import model_prescribing_units
 
 
-class SearchBookmark(models.Model):
-    name = models.CharField(max_length=200)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    numerator = models.CharField(max_length=200)
-    denominator = models.CharField(max_length=200)
-    url = models.CharField(max_length=200)
-    low_is_good = models.NullBooleanField()
-    include_in_email = models.BooleanField()
-
-    def get_absolute_url(self):
-        return reverse('searchbookmark-detail', kwargs={'pk': self.pk})
-
-    def __unicode__(self):
-        return 'Bookmark: ' + self.name
-
 class Section(models.Model):
     bnf_id = models.CharField(max_length=8, primary_key=True)
     name = models.CharField(max_length=200)
@@ -99,6 +84,8 @@ class PCT(models.Model):
 
     objects = models.GeoManager()
 
+    def __unicode__(self):
+        return self.name or ""
 
 class Practice(models.Model):
     '''
@@ -469,3 +456,52 @@ class MeasureGlobal(models.Model):
     class Meta:
         app_label = 'frontend'
         unique_together = (('measure', 'month'),)
+
+
+class SearchBookmark(models.Model):
+    '''A bookmark for an individual analyse search made by a user.
+    '''
+    name = models.CharField(max_length=200)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    url = models.CharField(max_length=200)
+    low_is_good = models.NullBooleanField()
+    include_in_email = models.BooleanField()
+
+    def get_absolute_url(self):
+        return reverse('searchbookmark-detail', kwargs={'pk': self.pk})
+
+    def __unicode__(self):
+        return 'Bookmark: ' + self.name
+
+
+class OrgBookmark(models.Model):
+    '''
+    A bookmark for an organistion a user is interested in.
+
+    If a bookmark for a CCG, the practice field will be null.
+    Otherwise, it's a bookmark for a practice, and the pct field
+    indicates the parent CCG, if it exists.
+    '''
+    name = models.CharField(max_length=200)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    pct = models.ForeignKey(PCT, null=True, blank=True)
+    practice = models.ForeignKey(Practice, null=True, blank=True)
+    include_in_email = models.BooleanField()
+
+    def dashboard_url(self):
+        if self.practice is None:
+            return reverse('ccg', kwargs={'ccg_code': self.pct.code})
+        else:
+            return reverse('practice', kwargs={'code': self.practice.code})
+
+    def name(self):
+        if self.practice is None:
+            return self.pct.name
+        else:
+            return self.practice.name
+
+    def get_absolute_url(self):
+        return reverse('orgbookmark-detail', kwargs={'pk': self.pk})
+
+    def __unicode__(self):
+        return 'Org Bookmark: ' + self.name()

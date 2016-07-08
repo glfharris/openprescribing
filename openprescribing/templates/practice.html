@@ -31,6 +31,8 @@
 <p class="lead">Closed: {{ practice.close_date }}</p>
 {% endif %}
 
+<a  href="{% url 'orgbookmark-add' %}?practice={{ practice.code }}" class="btn">Follow this practice</a>
+
 </div>
 
 <div class="col-md-6" id="map-container">
