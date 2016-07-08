@@ -184,17 +184,18 @@ LOCAL_APPS = (
     'frontend',
 )
 
-ALLAUTH_APPS = (
+CONTRIB_APPS = (
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
     # 'allauth.socialaccount.providers.facebook',
     # 'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.twitter',
+    'anymail'
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
-INSTALLED_APPS = DJANGO_APPS + ALLAUTH_APPS + LOCAL_APPS
+INSTALLED_APPS = DJANGO_APPS + CONTRIB_APPS + LOCAL_APPS
 # END APP CONFIGURATION
 
 
@@ -270,3 +271,10 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_METHODS = (
     'GET'
 )
+
+ANYMAIL = {
+    "MAILGUN_API_KEY": "key-10973675f49f754eb5520e3d4785ed0e",
+}
+
+EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
+DEFAULT_FROM_EMAIL = "hello@openprescribing.net"
