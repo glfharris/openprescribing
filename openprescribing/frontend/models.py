@@ -1,8 +1,25 @@
 from django.contrib.gis.db import models
 from django.contrib.postgres.fields import JSONField
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from validators import isAlphaNumeric
 import model_prescribing_units
 
+
+class SearchBookmark(models.Model):
+    name = models.CharField(max_length=200)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    numerator = models.CharField(max_length=200)
+    denominator = models.CharField(max_length=200)
+    url = models.CharField(max_length=200)
+    low_is_good = models.NullBooleanField()
+    include_in_email = models.BooleanField()
+
+    def get_absolute_url(self):
+        return reverse('searchbookmark-detail', kwargs={'pk': self.pk})
+
+    def __unicode__(self):
+        return 'Bookmark: ' + self.name
 
 class Section(models.Model):
     bnf_id = models.CharField(max_length=8, primary_key=True)

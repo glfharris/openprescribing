@@ -2,11 +2,13 @@ from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
 from django.conf import settings
 from django.views.generic import TemplateView
+from django.core.urlresolvers import reverse
 from common import utils
 import api
 from django.contrib import admin
 from frontend.views import views as frontend_views
 from frontend.views import profile_views
+from frontend.views import bookmark_views
 
 admin.autodiscover()
 
@@ -66,12 +68,29 @@ urlpatterns = [
     # Other files.
     url(r'^robots\.txt/$', TemplateView.as_view(template_name='robots.txt',
                                                 content_type='text/plain')),
-    # other auth-related pages
+    # auth-related pages
     url(r'^accounts/profile', profile_views.index,
         name='profile_index'),
 
     # required by django-allauth
     url(r'^accounts/', include('allauth.urls')),
     url(r'^admin/',include(admin.site.urls)),
+
+    # bookmarks
+    url(r'^bookmarks/$',
+        bookmark_views.SearchBookmarkList.as_view(),
+        name='searchbookmark-list'),
+    url(r'^bookmark/add/$',
+        bookmark_views.SearchBookmarkCreate.as_view(),
+        name='searchbookmark-add'
+    ),
+    url(r'^bookmark/(?P<pk>[0-9]+)/$',
+        bookmark_views.SearchBookmarkUpdate.as_view(),
+        name='searchbookmark-update'
+    ),
+    url(r'^bookmark/(?P<pk>[0-9]+)/delete/$',
+        bookmark_views.SearchBookmarkDelete.as_view(),
+        name='searchbookmark-delete'
+    ),
 
 ]
