@@ -2,6 +2,8 @@ import itertools
 from django.db import connection
 from django.shortcuts import get_object_or_404
 from frontend.models import Practice, Section
+from oauth2client.client import GoogleCredentials
+from googleapiclient.discovery import build
 
 
 def param_to_list(str):
@@ -12,36 +14,30 @@ def param_to_list(str):
     return params
 
 
-def dictfetchall(cursor):
-    desc = cursor.description
-    return [
-        dict(zip([col[0] for col in desc], row))
-        for row in cursor.fetchall()
-    ]
-
-
-def execute_query(query, params):
-    cursor = connection.cursor()
-    if params:
-        cursor.execute(query, tuple(itertools.chain.from_iterable(params)))
-    else:
-        cursor.execute(query)
-    data = dictfetchall(cursor)
-    cursor.close()
+def convert_data(rows, cols):
+    data = []
+    for row in rows:
+        d = {}
+        for i, c in enumerate(cols):
+            d[c] = row['f'][i]['v']
+        data.append(d)
     return data
 
 
-def get_practice_ids_from_org(org_codes):
-    # Convert CCG codes to lists of practices.
-    practices = []
-    for i, org in enumerate(org_codes):
-        if len(org) == 3:
-            practices_for_ccg = Practice.objects.filter(ccg_id=org)
-            for p in practices_for_ccg:
-                practices.append(p.code)
-        else:
-            practices.append(org)
-    return practices
+def run_query(query, cols):
+    PROJECT_ID = 620265099307
+    credentials = GoogleCredentials.get_application_default()
+    bigquery_service = build('bigquery', 'v2', credentials=credentials)
+    query_request = bigquery_service.jobs()
+    query_data = {
+        'query': query
+    }
+    query_response = query_request.query(
+        projectId=PROJECT_ID,
+        body=query_data).execute()
+    print query_response
+    data = convert_data(query_response['rows'], cols)
+    return data
 
 
 def get_bnf_codes_from_number_str(codes):
@@ -59,21 +55,3 @@ def get_bnf_codes_from_number_str(codes):
             # it's a presentation, not a section
             converted.append(code)
     return converted
-
-
-def get_spending_type(codes):
-    # Codes must all be of the same length.
-    if not codes:
-        return None
-    code_len = len(codes[0])
-    for c in codes:
-        if len(c) != code_len:
-            return False
-    if code_len < 9:
-        return 'bnf-section'
-    elif code_len == 9:
-        return 'chemical'
-    elif code_len > 9 and code_len <= 11:
-        return 'product'
-    elif code_len > 11:
-        return 'presentation'
