@@ -104,6 +104,36 @@ def spending_by_practice(request, format=None):
     return Response(data)
 
 
+def _wrap_query_with_dates(query, headers=[], order_by=[]):
+    """Wrap a query with an outer query that adds dates for all dates for
+    which we have prescribing data.
+
+    This makes charts consistent, because they always span the entire
+    range of possible dates, regardless of if the query selects (for
+    example) chemicals with very sparse prescribing data.
+    """
+    defaults = {'actual_cost': 0,
+                'items': 0,
+                'quantity': 0,
+                'code': "''",
+                'bnf_code': "''",
+                'name': "''",
+                'row_id': "'n/a'",
+                'row_name': "'n/a'",
+                'ccg': "'n/a'",
+                'setting': 0}
+    prologue = 'SELECT DISTINCT log.current_at AS date'
+    for header in headers:
+        prologue += ", COALESCE(%s, %s) as %s " % (header, defaults[header], header)
+    prologue += 'FROM frontend_importlog log LEFT JOIN ('
+
+    epilogue = (") AS values ON values.date = log.current_at "
+                "WHERE log.category = 'prescribing' ORDER BY log.current_at")
+    for col in order_by:
+        epilogue += ", %s" % col
+    return "%s %s %s" % (prologue, query, epilogue)
+
+
 def _get_query_for_total_spending(codes):
     query = 'SELECT SUM(cost) AS actual_cost, '
     query += 'SUM(items) AS items, '
@@ -117,8 +147,10 @@ def _get_query_for_total_spending(codes):
             if (i != len(codes) - 1):
                 query += ' OR '
         query += ") "
-    query += "GROUP BY date ORDER BY date"
-    return query
+    query += "GROUP BY date"
+    return _wrap_query_with_dates(
+        query,
+        headers=['actual_cost', 'items', 'quantity'])
 
 
 def _get_query_for_total_spending_with_subdivide(codes):
@@ -137,34 +169,39 @@ def _get_query_for_total_spending_with_subdivide(codes):
         end_char = 9
     elif len(code) == 11:
         end_char = 15
-    query = 'SELECT SUM(cost) AS actual_cost, SUM(items) AS items, '
-    query += 'SUM(quantity) AS quantity, '
-    query += 'SUBSTR(vwps.presentation_code, 1, %s) AS code, ' % end_char
-    query += 'frontend_section.number_str AS bnf_code, '
-    query += 'processing_date AS date, '
-    query += 'frontend_section.name AS name '
-    query += 'FROM vw__presentation_summary vwps '
-    query += 'LEFT JOIN frontend_section ON '
-    query += 'frontend_section.bnf_id'
-    query += '=SUBSTR(vwps.presentation_code, 1, %s) ' % end_char
+
+    query = ('SELECT SUM(cost) AS actual_cost, SUM(items) AS items, '
+             'SUM(quantity) AS quantity, '
+             'SUBSTR(vwps.presentation_code, 1, %s) AS code, '
+             'frontend_section.number_str AS bnf_code, '
+             'processing_date AS date, '
+             'frontend_section.name AS name '
+             'FROM vw__presentation_summary vwps '
+             'LEFT JOIN frontend_section ON '
+             'frontend_section.bnf_id'
+             '=SUBSTR(vwps.presentation_code, 1, %s) ' % (end_char, end_char))
     if code:
         query += 'WHERE vwps.presentation_code LIKE %s '
         code += '%'
     query += 'GROUP BY code, name, number_str, date '
-    query += 'ORDER BY date, code'
-    return query
+    return _wrap_query_with_dates(
+        query,
+        headers=['actual_cost', 'items', 'quantity', 'code',
+                 'bnf_code', 'name'],
+        order_by=['code'])
 
 
 def _get_query_for_chemicals_or_sections_by_ccg(codes, orgs, spending_type):
-    query = 'SELECT pr.pct_id as row_id, '
-    query += "pc.name as row_name, "
-    query += 'pr.processing_date as date, '
-    query += 'SUM(pr.cost) AS actual_cost, '
-    query += 'SUM(pr.items) AS items, '
-    query += 'SUM(pr.quantity) AS quantity '
-    query += "FROM vw__chemical_summary_by_ccg pr "
-    query += "JOIN frontend_pct pc ON pr.pct_id=pc.code "
-    query += "AND pc.org_type='CCG' "
+
+    query = ('SELECT pr.pct_id as row_id, '
+             "pc.name as row_name, "
+             'pr.processing_date as date, '
+             'SUM(pr.cost) AS actual_cost, '
+             'SUM(pr.items) AS items, '
+             'SUM(pr.quantity) AS quantity '
+             "FROM vw__chemical_summary_by_ccg pr "
+             "JOIN frontend_pct pc ON pr.pct_id=pc.code "
+             "AND pc.org_type='CCG' ")
     if spending_type:
         query += " WHERE ("
         if spending_type == 'bnf-section':
@@ -186,22 +223,23 @@ def _get_query_for_chemicals_or_sections_by_ccg(codes, orgs, spending_type):
             if (i != len(orgs) - 1):
                 query += ' OR '
         query += ") "
-    query += "GROUP BY pr.pct_id, pc.code, date "
-    query += "ORDER BY date, pr.pct_id "
-    return query
+    query += "GROUP BY pr.pct_id, pc.code, date"
+    return _wrap_query_with_dates(
+        query, headers=['row_id', 'row_name', 'actual_cost',
+                        'items', 'quantity'], order_by=['row_id'])
 
 
 def _get_query_for_presentations_by_ccg(codes, orgs):
-    query = 'SELECT pr.pct_id as row_id, '
-    query += "pc.name as row_name, "
-    query += 'pr.processing_date as date, '
-    query += "SUM(pr.items) AS items, "
-    query += 'SUM(pr.cost) AS actual_cost, '
-    query += 'SUM(pr.quantity) AS quantity '
-    query += "FROM vw__presentation_summary_by_ccg pr "
-    query += "JOIN frontend_pct pc ON pr.pct_id=pc.code "
-    query += "AND pc.org_type='CCG' "
-    query += " WHERE ("
+    query = ('SELECT pr.pct_id as row_id, '
+             "pc.name as row_name, "
+             'pr.processing_date as date, '
+             "SUM(pr.items) AS items, "
+             'SUM(pr.cost) AS actual_cost, '
+             'SUM(pr.quantity) AS quantity '
+             "FROM vw__presentation_summary_by_ccg pr "
+             "JOIN frontend_pct pc ON pr.pct_id=pc.code "
+             "AND pc.org_type='CCG' "
+             " WHERE (")
     for i, c in enumerate(codes):
         query += "pr.presentation_code LIKE %s "
         if (i != len(codes) - 1):
@@ -212,22 +250,23 @@ def _get_query_for_presentations_by_ccg(codes, orgs):
             query += "pr.pct_id=%s "
             if (i != len(orgs) - 1):
                 query += ' OR '
-    query += ") GROUP BY pr.pct_id, pc.code, date "
-    query += "ORDER BY date, pr.pct_id"
-    return query
+    query += ') GROUP BY pr.pct_id, pc.code, date'
+    return _wrap_query_with_dates(
+        query, headers=['row_id', 'row_name', 'actual_cost',
+                        'items', 'quantity'], order_by=['row_id'])
 
 
 def _get_total_spending_by_practice(orgs, date):
-    query = 'SELECT pr.practice_id AS row_id, '
-    query += "pc.name AS row_name, "
-    query += "pc.setting AS setting, "
-    query += "pc.ccg_id AS ccg, "
-    query += 'pr.processing_date AS date, '
-    query += 'pr.cost AS actual_cost, '
-    query += 'pr.items AS items, '
-    query += 'pr.quantity AS quantity '
-    query += "FROM vw__practice_summary pr "
-    query += "JOIN frontend_practice pc ON pr.practice_id=pc.code "
+    query = ('SELECT pr.practice_id AS row_id, '
+             "pc.name AS row_name, "
+             "pc.setting AS setting, "
+             "pc.ccg_id AS ccg, "
+             'pr.processing_date AS date, '
+             'pr.cost AS actual_cost, '
+             'pr.items AS items, '
+             'pr.quantity AS quantity '
+             "FROM vw__practice_summary pr "
+             "JOIN frontend_practice pc ON pr.practice_id=pc.code ")
     if orgs or date:
         query += "WHERE "
     if date:
@@ -244,23 +283,24 @@ def _get_total_spending_by_practice(orgs, date):
             #     query += "pr.practice_id=%s "
             if (i != len(orgs) - 1):
                 query += ' OR '
-        query += ") "
-    query += "ORDER BY date, pr.practice_id "
-    return query
+        query += ")"
+    return _wrap_query_with_dates(
+        query, headers=['row_id', 'row_name', 'actual_cost', 'ccg', 'setting',
+                        'items', 'quantity'], order_by=['row_id'])
 
 
 def _get_chemicals_or_sections_by_practice(codes, orgs, spending_type,
                                            date):
-    query = 'SELECT pr.practice_id AS row_id, '
-    query += "pc.name AS row_name, "
-    query += "pc.setting AS setting, "
-    query += "pc.ccg_id AS ccg, "
-    query += "pr.processing_date AS date, "
-    query += 'SUM(pr.cost) AS actual_cost, '
-    query += 'SUM(pr.items) AS items, '
-    query += 'SUM(pr.quantity) AS quantity '
-    query += "FROM vw__chemical_summary_by_practice pr "
-    query += "JOIN frontend_practice pc ON pr.practice_id=pc.code "
+    query = ('SELECT pr.practice_id AS row_id, '
+             "pc.name AS row_name, "
+             "pc.setting AS setting, "
+             "pc.ccg_id AS ccg, "
+             "pr.processing_date AS date, "
+             'SUM(pr.cost) AS actual_cost, '
+             'SUM(pr.items) AS items, '
+             'SUM(pr.quantity) AS quantity '
+             "FROM vw__chemical_summary_by_practice pr "
+             "JOIN frontend_practice pc ON pr.practice_id=pc.code ")
     has_preceding = False
     if spending_type:
         has_preceding = True
@@ -298,23 +338,24 @@ def _get_chemicals_or_sections_by_practice(codes, orgs, spending_type,
         else:
             query += " WHERE ("
         query += "pr.processing_date=%s) "
-    query += "GROUP BY pr.practice_id, pc.code, date "
-    query += "ORDER BY date, pr.practice_id"
-    return query
+    query += "GROUP BY pr.practice_id, pc.code, date"
+    return _wrap_query_with_dates(
+        query, headers=['row_id', 'row_name', 'actual_cost',  'setting', 'ccg',
+                        'items', 'quantity'], order_by=['row_id'])
 
 
 def _get_presentations_by_practice(codes, orgs, date):
-    query = 'SELECT pr.practice_id AS row_id, '
-    query += "pc.name AS row_name, "
-    query += "pc.setting AS setting, "
-    query += "pc.ccg_id AS ccg, "
-    query += "pr.processing_date AS date, "
-    query += 'SUM(pr.actual_cost) AS actual_cost, '
-    query += 'SUM(pr.total_items) AS items, '
-    query += 'CAST(SUM(pr.quantity) AS bigint) AS quantity '
-    query += "FROM frontend_prescription pr "
-    query += "JOIN frontend_practice pc ON pr.practice_id=pc.code "
-    query += "WHERE ("
+    query = ('SELECT pr.practice_id AS row_id, '
+             "pc.name AS row_name, "
+             "pc.setting AS setting, "
+             "pc.ccg_id AS ccg, "
+             "pr.processing_date AS date, "
+             'SUM(pr.actual_cost) AS actual_cost, '
+             'SUM(pr.total_items) AS items, '
+             'CAST(SUM(pr.quantity) AS bigint) AS quantity '
+             "FROM frontend_prescription pr "
+             "JOIN frontend_practice pc ON pr.practice_id=pc.code "
+             "WHERE (")
     for i, c in enumerate(codes):
         query += "pr.presentation_code LIKE %s "
         if (i != len(codes) - 1):
@@ -330,6 +371,7 @@ def _get_presentations_by_practice(codes, orgs, date):
                 query += ' OR '
     if date:
         query += "AND pr.processing_date=%s "
-    query += ") GROUP BY pr.practice_id, pc.code, date "
-    query += "ORDER BY date, pr.practice_id"
-    return query
+    query += ") GROUP BY pr.practice_id, pc.code, date"
+    return _wrap_query_with_dates(
+        query, headers=['row_id', 'row_name', 'actual_cost', 'ccg', 'setting',
+                        'items', 'quantity'], order_by=['row_id'])

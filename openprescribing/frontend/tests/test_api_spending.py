@@ -23,6 +23,8 @@ def setUpModule():
                             verbosity=0)
     management.call_command('loaddata', fix_dir + 'practice_listsizes.json',
                             verbosity=0)
+    management.call_command('loaddata', fix_dir + 'importlog.json',
+                            verbosity=0)
     db_name = utils.get_env_setting('DB_NAME')
     db_user = utils.get_env_setting('DB_USER')
     db_pass = utils.get_env_setting('DB_PASS')
@@ -80,7 +82,7 @@ class TestAPISpendingViews(TestCase):
     ########################################
     def test_total_spending(self):
         rows = self._rows_from_api('/spending?format=csv')
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[0]['date'], '2013-04-01')
         self.assertEqual(rows[0]['actual_cost'], '4.61')
         self.assertEqual(rows[0]['items'], '3')
@@ -92,7 +94,7 @@ class TestAPISpendingViews(TestCase):
 
     def test_total_spending_by_bnf_section(self):
         rows = self._rows_from_api('/spending?format=csv&code=2')
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[0]['date'], '2013-04-01')
         self.assertEqual(rows[0]['actual_cost'], '4.61')
         self.assertEqual(rows[0]['items'], '3')
@@ -104,7 +106,7 @@ class TestAPISpendingViews(TestCase):
 
     def test_total_spending_by_bnf_section_full_code(self):
         rows = self._rows_from_api('/spending?format=csv&code=02')
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[0]['date'], '2013-04-01')
         self.assertEqual(rows[0]['actual_cost'], '4.61')
         self.assertEqual(rows[0]['items'], '3')
@@ -116,17 +118,36 @@ class TestAPISpendingViews(TestCase):
 
     def test_total_spending_by_code(self):
         rows = self._rows_from_api('/spending?format=csv&code=0204000I0')
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['date'], '2014-11-01')
-        self.assertEqual(rows[0]['actual_cost'], '36.28')
-        self.assertEqual(rows[0]['items'], '33')
-        self.assertEqual(rows[0]['quantity'], '2354')
+        self.assertEqual(len(rows), 7)  # one row of data, the rest zero-filled
+        self.assertEqual(rows[0]['date'], '2013-04-01')
+        self.assertEqual(rows[0]['items'], '0')
+        self.assertEqual(rows[5]['date'], '2014-11-01')
+        self.assertEqual(rows[5]['actual_cost'], '36.28')
+        self.assertEqual(rows[5]['items'], '33')
+        self.assertEqual(rows[5]['quantity'], '2354')
+
+    def test_total_spending_by_code_with_subdivide(self):
+        rows = self._rows_from_api('/spending?format=csv&code=0204000I0&subdivide=true')
+        self.assertEqual(len(rows), 8)  # one for each month of
+                                        # prescribing data with null
+                                        # values; two for the month
+                                        # when we have matching
+                                        # prescribing data
+        self.assertEqual(rows[0]['date'], '2013-04-01')
+        self.assertEqual(rows[0]['items'], '0')
+        self.assertEqual(rows[5]['quantity'], '4')
+        self.assertEqual(rows[5]['date'], '2014-11-01')
+        self.assertEqual(rows[5]['items'], '4')
+        self.assertEqual(rows[5]['quantity'], '4')
+        self.assertEqual(rows[6]['date'], '2014-11-01')
+        self.assertEqual(rows[6]['items'], '29')
+        self.assertEqual(rows[6]['quantity'], '2350')
 
     def test_total_spending_by_codes(self):
         url = '/spending?format=csv'
         url += '&code=0204000I0,0202010B0'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[3]['date'], '2014-09-01')
         self.assertEqual(rows[3]['actual_cost'], '36.29')
         self.assertEqual(rows[3]['items'], '40')
@@ -137,27 +158,29 @@ class TestAPISpendingViews(TestCase):
     ########################################
     def test_total_spending_by_ccg(self):
         rows = self._rows_from_api('/spending_by_ccg?format=csv')
-        self.assertEqual(len(rows), 9)
+        self.assertEqual(len(rows), 10)
         self.assertEqual(rows[6]['row_id'], '03V')
         self.assertEqual(rows[6]['row_name'], 'NHS Corby')
         self.assertEqual(rows[6]['date'], '2014-09-01')
         self.assertEqual(rows[6]['actual_cost'], '38.28')
         self.assertEqual(rows[6]['items'], '41')
         self.assertEqual(rows[6]['quantity'], '1241')
+        self.assertEqual(rows[9]['quantity'], '0')
+        self.assertEqual(rows[9]['actual_cost'], '0.0')
 
     def test_total_spending_by_one_ccg(self):
         rows = self._rows_from_api('/spending_by_ccg?format=csv&org=03V')
-        self.assertEqual(len(rows), 5)
-        self.assertEqual(rows[-2]['row_id'], '03V')
-        self.assertEqual(rows[-2]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[-2]['date'], '2014-09-01')
-        self.assertEqual(rows[-2]['actual_cost'], '38.28')
-        self.assertEqual(rows[-2]['items'], '41')
-        self.assertEqual(rows[-2]['quantity'], '1241')
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[3]['row_id'], '03V')
+        self.assertEqual(rows[3]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[3]['date'], '2014-09-01')
+        self.assertEqual(rows[3]['actual_cost'], '38.28')
+        self.assertEqual(rows[3]['items'], '41')
+        self.assertEqual(rows[3]['quantity'], '1241')
 
     def test_total_spending_by_multiple_ccgs(self):
         rows = self._rows_from_api('/spending_by_ccg?format=csv&org=03V,03Q')
-        self.assertEqual(len(rows), 9)
+        self.assertEqual(len(rows), 10)
         self.assertEqual(rows[6]['row_id'], '03V')
         self.assertEqual(rows[6]['row_name'], 'NHS Corby')
         self.assertEqual(rows[6]['date'], '2014-09-01')
@@ -168,7 +191,7 @@ class TestAPISpendingViews(TestCase):
     def test_spending_by_all_ccgs_on_chemical(self):
         rows = self._rows_from_api(
             '/spending_by_ccg?format=csv&code=0202010B0')
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[0]['row_id'], '03V')
         self.assertEqual(rows[0]['row_name'], 'NHS Corby')
         self.assertEqual(rows[0]['date'], '2013-04-01')
@@ -186,49 +209,56 @@ class TestAPISpendingViews(TestCase):
         url = '/spending_by_ccg'
         url += '?format=csv&code=0202010B0,0202010F0'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 9)
+        self.assertEqual(len(rows), 10)
         self.assertEqual(rows[0]['row_id'], '03Q')
         self.assertEqual(rows[0]['row_name'], 'NHS Vale of York')
         self.assertEqual(rows[0]['date'], '2013-04-01')
         self.assertEqual(rows[0]['actual_cost'], '3.05')
         self.assertEqual(rows[0]['items'], '2')
         self.assertEqual(rows[0]['quantity'], '56')
-        self.assertEqual(rows[-3]['row_id'], '03V')
-        self.assertEqual(rows[-3]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[-3]['date'], '2014-09-01')
-        self.assertEqual(rows[-3]['actual_cost'], '38.28')
-        self.assertEqual(rows[-3]['items'], '41')
-        self.assertEqual(rows[-3]['quantity'], '1241')
+        self.assertEqual(rows[-4]['row_id'], '03V')
+        self.assertEqual(rows[-4]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[-4]['date'], '2014-09-01')
+        self.assertEqual(rows[-4]['actual_cost'], '38.28')
+        self.assertEqual(rows[-4]['items'], '41')
+        self.assertEqual(rows[-4]['quantity'], '1241')
 
     def test_spending_by_all_ccgs_on_product(self):
+        # XXX potentially we want this to return every single CCG, not
+        # just ones with data example:
+        # http://localhost:8000/analyse/#org=CCG&
+        # numIds=0501013E0&denomIds=5.1.1&selectedTab=summary We are
+        # wrapping up spending for "n/a" as it is in that chart,
+        # because there are some dates with no data. That won't be a
+        # problem in production, but is a bit wierd.
         url = '/spending_by_ccg'
         url += '?format=csv&code=0204000I0BC'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 1)
-        self.assertEqual(rows[0]['row_id'], '03V')
-        self.assertEqual(rows[0]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[0]['date'], '2014-11-01')
-        self.assertEqual(rows[0]['actual_cost'], '32.26')
-        self.assertEqual(rows[0]['items'], '29')
-        self.assertEqual(rows[0]['quantity'], '2350')
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[-2]['row_id'], '03V')
+        self.assertEqual(rows[-2]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '32.26')
+        self.assertEqual(rows[-2]['items'], '29')
+        self.assertEqual(rows[-2]['quantity'], '2350')
 
     def test_spending_by_all_ccgs_on_presentation(self):
         url = '/spending_by_ccg'
         url += '?format=csv&code=0202010B0AAABAB'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[2]['row_id'], '03V')
-        self.assertEqual(rows[2]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[2]['date'], '2014-11-01')
-        self.assertEqual(rows[2]['actual_cost'], '54.26')
-        self.assertEqual(rows[2]['items'], '62')
-        self.assertEqual(rows[2]['quantity'], '2788')
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[5]['row_id'], '03V')
+        self.assertEqual(rows[5]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[5]['date'], '2014-11-01')
+        self.assertEqual(rows[5]['actual_cost'], '54.26')
+        self.assertEqual(rows[5]['items'], '62')
+        self.assertEqual(rows[5]['quantity'], '2788')
 
     def test_spending_by_all_ccgs_on_multiple_presentations(self):
         url = '/spending_by_ccg'
         url += '?format=csv&code=0202010F0AAAAAA,0202010B0AAACAC'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 7)
+        self.assertEqual(len(rows), 10)
         self.assertEqual(rows[0]['row_id'], '03Q')
         self.assertEqual(rows[0]['row_name'], 'NHS Vale of York')
         self.assertEqual(rows[0]['date'], '2013-04-01')
@@ -239,30 +269,30 @@ class TestAPISpendingViews(TestCase):
     def test_spending_by_all_ccgs_on_bnf_section(self):
         url = '/spending_by_ccg?format=csv&code=2.2.1'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 9)
+        self.assertEqual(len(rows), 10)
         self.assertEqual(rows[0]['row_id'], '03Q')
         self.assertEqual(rows[0]['row_name'], 'NHS Vale of York')
         self.assertEqual(rows[0]['date'], '2013-04-01')
         self.assertEqual(rows[0]['actual_cost'], '3.05')
         self.assertEqual(rows[0]['items'], '2')
         self.assertEqual(rows[0]['quantity'], '56')
-        self.assertEqual(rows[-1]['row_id'], '03V')
-        self.assertEqual(rows[-1]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[-1]['date'], '2014-11-01')
-        self.assertEqual(rows[-1]['actual_cost'], '54.26')
-        self.assertEqual(rows[-1]['items'], '62')
-        self.assertEqual(rows[-1]['quantity'], '2788')
+        self.assertEqual(rows[-2]['row_id'], '03V')
+        self.assertEqual(rows[-2]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '54.26')
+        self.assertEqual(rows[-2]['items'], '62')
+        self.assertEqual(rows[-2]['quantity'], '2788')
 
     def test_spending_by_all_ccgs_on_multiple_bnf_sections(self):
         url = '/spending_by_ccg?format=csv&code=2.2,2.4'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 9)
-        self.assertEqual(rows[-1]['row_id'], '03V')
-        self.assertEqual(rows[-1]['row_name'], 'NHS Corby')
-        self.assertEqual(rows[-1]['date'], '2014-11-01')
-        self.assertEqual(rows[-1]['actual_cost'], '90.54')
-        self.assertEqual(rows[-1]['items'], '95')
-        self.assertEqual(rows[-1]['quantity'], '5142')
+        self.assertEqual(len(rows), 10)
+        self.assertEqual(rows[-2]['row_id'], '03V')
+        self.assertEqual(rows[-2]['row_name'], 'NHS Corby')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '90.54')
+        self.assertEqual(rows[-2]['items'], '95')
+        self.assertEqual(rows[-2]['quantity'], '5142')
 
     ########################################
     # Total spending by practice.
@@ -277,74 +307,91 @@ class TestAPISpendingViews(TestCase):
         url = '/spending_by_practice'
         url += '?format=csv&date=2014-11-01'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]['row_id'], 'K83059')
-        self.assertEqual(rows[0]['row_name'], 'DR KHALID & PARTNERS')
-        self.assertEqual(rows[0]['date'], '2014-11-01')
-        self.assertEqual(rows[0]['setting'], '-1')
-        self.assertEqual(rows[0]['ccg'], '03V')
-        self.assertEqual(rows[0]['actual_cost'], '26.28')
-        self.assertEqual(rows[0]['items'], '40')
-        self.assertEqual(rows[0]['quantity'], '2543')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[-3]['row_id'], 'K83059')
+        self.assertEqual(rows[-3]['row_name'], 'DR KHALID & PARTNERS')
+        self.assertEqual(rows[-3]['date'], '2014-11-01')
+        self.assertEqual(rows[-3]['setting'], '-1')
+        self.assertEqual(rows[-3]['ccg'], '03V')
+        self.assertEqual(rows[-3]['actual_cost'], '26.28')
+        self.assertEqual(rows[-3]['items'], '40')
+        self.assertEqual(rows[-3]['quantity'], '2543')
 
     def test_spending_by_practice_on_chemical(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0204000I0&date=2014-11-01'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]['row_id'], 'K83059')
-        self.assertEqual(rows[0]['row_name'], 'DR KHALID & PARTNERS')
-        self.assertEqual(rows[0]['setting'], '-1')
-        self.assertEqual(rows[0]['ccg'], '03V')
-        self.assertEqual(rows[0]['date'], '2014-11-01')
-        self.assertEqual(rows[0]['actual_cost'], '14.15')
-        self.assertEqual(rows[0]['items'], '16')
-        self.assertEqual(rows[0]['quantity'], '1154')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[-3]['row_id'], 'K83059')
+        self.assertEqual(rows[-3]['row_name'], 'DR KHALID & PARTNERS')
+        self.assertEqual(rows[-3]['setting'], '-1')
+        self.assertEqual(rows[-3]['ccg'], '03V')
+        self.assertEqual(rows[-3]['date'], '2014-11-01')
+        self.assertEqual(rows[-3]['actual_cost'], '14.15')
+        self.assertEqual(rows[-3]['items'], '16')
+        self.assertEqual(rows[-3]['quantity'], '1154')
 
     def test_spending_by_all_practices_on_chemical_with_date(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0202010F0&date=2014-09-01'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]['row_id'], 'N84014')
-        self.assertEqual(rows[0]['actual_cost'], '11.99')
-        self.assertEqual(rows[0]['items'], '1')
-        self.assertEqual(rows[0]['quantity'], '128')
-        self.assertEqual(rows[1]['row_id'], 'P87629')
-        self.assertEqual(rows[1]['actual_cost'], '1.99')
-        self.assertEqual(rows[1]['items'], '1')
-        self.assertEqual(rows[1]['quantity'], '32')
+        import pprint; pprint.pprint(rows)
+
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[3]['row_id'], 'N84014')
+        self.assertEqual(rows[3]['actual_cost'], '11.99')
+        self.assertEqual(rows[3]['items'], '1')
+        self.assertEqual(rows[3]['quantity'], '128')
+        self.assertEqual(rows[4]['row_id'], 'P87629')
+        self.assertEqual(rows[4]['actual_cost'], '1.99')
+        self.assertEqual(rows[4]['items'], '1')
+        self.assertEqual(rows[4]['quantity'], '32')
 
     def test_spending_by_one_practice(self):
         url = '/spending_by_practice?format=csv&org=P87629'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 5)
-        self.assertEqual(rows[-1]['row_id'], 'P87629')
-        self.assertEqual(rows[-1]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
-        self.assertEqual(rows[-1]['date'], '2014-11-01')
-        self.assertEqual(rows[-1]['actual_cost'], '64.26')
-        self.assertEqual(rows[-1]['items'], '55')
-        self.assertEqual(rows[-1]['quantity'], '2599')
+        self.assertEqual(len(rows), 7)
+        # A row filled with zero/default values
+        self.assertEqual(rows[-1]['row_id'], 'P87629') # XXX ideally
+                                                       # this would be
+                                                       # P87629... but
+                                                       # I can't see
+                                                       # where this
+                                                       # gets used in
+                                                       # the code to
+                                                       # draw graphs,
+                                                       # so not sure
+                                                       # it's
+                                                       # important
+        self.assertEqual(rows[-1]['date'], '2014-12-01')
+        self.assertEqual(rows[-1]['items'], '0')
+        # A row with real values
+        self.assertEqual(rows[-2]['row_id'], 'P87629')
+        self.assertEqual(rows[-2]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '64.26')
+        self.assertEqual(rows[-2]['items'], '55')
+        self.assertEqual(rows[-2]['quantity'], '2599')
 
     def test_spending_by_one_practice_on_chemical(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0202010B0&org=P87629'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 5)
-        self.assertEqual(rows[-1]['row_id'], 'P87629')
-        self.assertEqual(rows[-1]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
-        self.assertEqual(rows[-1]['setting'], '4')
-        self.assertEqual(rows[-1]['ccg'], '03V')
-        self.assertEqual(rows[-1]['date'], '2014-11-01')
-        self.assertEqual(rows[-1]['actual_cost'], '42.13')
-        self.assertEqual(rows[-1]['items'], '38')
-        self.assertEqual(rows[-1]['quantity'], '1399')
+        self.assertEqual(len(rows), 7)
+        self.assertEqual(rows[-2]['row_id'], 'P87629')
+        self.assertEqual(rows[-2]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
+        self.assertEqual(rows[-2]['setting'], '4')
+        self.assertEqual(rows[-2]['ccg'], '03V')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '42.13')
+        self.assertEqual(rows[-2]['items'], '38')
+        self.assertEqual(rows[-2]['quantity'], '1399')
 
     def test_spending_by_practice_on_multiple_chemicals(self):
         url = '/spending_by_practice?format=csv'
         url += '&code=0202010B0,0204000I0&org=P87629,K83059'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 6)
+        self.assertEqual(len(rows), 8)
         self.assertEqual(rows[2]['row_id'], 'P87629')
         self.assertEqual(rows[2]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
         self.assertEqual(rows[2]['date'], '2013-10-01')
@@ -353,76 +400,78 @@ class TestAPISpendingViews(TestCase):
         self.assertEqual(rows[2]['quantity'], '24')
 
     def test_spending_by_all_practices_on_product(self):
+        # XXX potentially we want this to return a value for every
+        # practice / month, but see comments above
         url = '/spending_by_practice'
         url += '?format=csv&code=0202010B0AA&date=2014-11-01'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]['row_id'], 'K83059')
-        self.assertEqual(rows[0]['actual_cost'], '12.13')
-        self.assertEqual(rows[0]['items'], '24')
-        self.assertEqual(rows[0]['quantity'], '1389')
-        self.assertEqual(rows[1]['row_id'], 'P87629')
-        self.assertEqual(rows[1]['actual_cost'], '42.13')
-        self.assertEqual(rows[1]['items'], '38')
-        self.assertEqual(rows[1]['quantity'], '1399')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[5]['row_id'], 'K83059')
+        self.assertEqual(rows[5]['actual_cost'], '12.13')
+        self.assertEqual(rows[5]['items'], '24')
+        self.assertEqual(rows[5]['quantity'], '1389')
+        self.assertEqual(rows[6]['row_id'], 'P87629')
+        self.assertEqual(rows[6]['actual_cost'], '42.13')
+        self.assertEqual(rows[6]['items'], '38')
+        self.assertEqual(rows[6]['quantity'], '1399')
 
     def test_spending_by_all_practices_on_presentation(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0202010B0AAABAB&date=2014-11-01'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[0]['row_id'], 'K83059')
-        self.assertEqual(rows[0]['actual_cost'], '12.13')
-        self.assertEqual(rows[0]['items'], '24')
-        self.assertEqual(rows[0]['quantity'], '1389')
-        self.assertEqual(rows[1]['row_id'], 'P87629')
-        self.assertEqual(rows[1]['actual_cost'], '42.13')
-        self.assertEqual(rows[1]['items'], '38')
-        self.assertEqual(rows[1]['quantity'], '1399')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[5]['row_id'], 'K83059')
+        self.assertEqual(rows[5]['actual_cost'], '12.13')
+        self.assertEqual(rows[5]['items'], '24')
+        self.assertEqual(rows[5]['quantity'], '1389')
+        self.assertEqual(rows[6]['row_id'], 'P87629')
+        self.assertEqual(rows[6]['actual_cost'], '42.13')
+        self.assertEqual(rows[6]['items'], '38')
+        self.assertEqual(rows[6]['quantity'], '1399')
 
     def test_spending_by_practice_on_presentation(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0204000I0BCAAAB&org=03V'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 2)
-        self.assertEqual(rows[1]['row_id'], 'P87629')
-        self.assertEqual(rows[1]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
-        self.assertEqual(rows[1]['setting'], '4')
-        self.assertEqual(rows[1]['ccg'], '03V')
-        self.assertEqual(rows[1]['date'], '2014-11-01')
-        self.assertEqual(rows[1]['actual_cost'], '22.13')
-        self.assertEqual(rows[1]['items'], '17')
-        self.assertEqual(rows[1]['quantity'], '1200')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[6]['row_id'], 'P87629')
+        self.assertEqual(rows[6]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
+        self.assertEqual(rows[6]['setting'], '4')
+        self.assertEqual(rows[6]['ccg'], '03V')
+        self.assertEqual(rows[6]['date'], '2014-11-01')
+        self.assertEqual(rows[6]['actual_cost'], '22.13')
+        self.assertEqual(rows[6]['items'], '17')
+        self.assertEqual(rows[6]['quantity'], '1200')
 
     def test_spending_by_practice_on_multiple_presentations(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0204000I0BCAAAB,0202010B0AAABAB&org=03V'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 3)
-        self.assertEqual(rows[2]['row_id'], 'P87629')
-        self.assertEqual(rows[2]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
-        self.assertEqual(rows[2]['date'], '2014-11-01')
-        self.assertEqual(rows[2]['actual_cost'], '64.26')
-        self.assertEqual(rows[2]['items'], '55')
-        self.assertEqual(rows[2]['quantity'], '2599')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[6]['row_id'], 'P87629')
+        self.assertEqual(rows[6]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
+        self.assertEqual(rows[6]['date'], '2014-11-01')
+        self.assertEqual(rows[6]['actual_cost'], '64.26')
+        self.assertEqual(rows[6]['items'], '55')
+        self.assertEqual(rows[6]['quantity'], '2599')
 
     def test_spending_by_practice_on_section(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=2&org=03V'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 6)
-        self.assertEqual(rows[-1]['row_id'], 'P87629')
-        self.assertEqual(rows[-1]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
-        self.assertEqual(rows[-1]['date'], '2014-11-01')
-        self.assertEqual(rows[-1]['actual_cost'], '64.26')
-        self.assertEqual(rows[-1]['items'], '55')
-        self.assertEqual(rows[-1]['quantity'], '2599')
+        self.assertEqual(len(rows), 8)
+        self.assertEqual(rows[-2]['row_id'], 'P87629')
+        self.assertEqual(rows[-2]['row_name'], '1/ST ANDREWS MEDICAL PRACTICE')
+        self.assertEqual(rows[-2]['date'], '2014-11-01')
+        self.assertEqual(rows[-2]['actual_cost'], '64.26')
+        self.assertEqual(rows[-2]['items'], '55')
+        self.assertEqual(rows[-2]['quantity'], '2599')
 
     def test_spending_by_practice_on_multiple_sections(self):
         url = '/spending_by_practice'
         url += '?format=csv&code=0202,0204&org=03Q'
         rows = self._rows_from_api(url)
-        self.assertEqual(len(rows), 4)
+        self.assertEqual(len(rows), 7)
         self.assertEqual(rows[0]['row_id'], 'N84014')
         self.assertEqual(rows[0]['row_name'], 'AINSDALE VILLAGE SURGERY')
         self.assertEqual(rows[0]['date'], '2013-04-01')
