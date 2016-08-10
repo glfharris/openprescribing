@@ -41,7 +41,7 @@ class SearchBookmarkCreate(CreateView):
     model = SearchBookmark
     form_class = SearchBookmarkForm
     template_name = 'bookmarks/searchbookmark_form.html'
-    success_url = reverse_lazy('searchbookmark-list')
+    success_url = reverse_lazy('bookmark-list')
 
     def get_initial(self):
         return {

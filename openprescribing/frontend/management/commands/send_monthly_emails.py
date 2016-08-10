@@ -26,20 +26,20 @@ class Command(BaseCommand):
         if options['verbosity'] > 1:
             self.IS_VERBOSE = True
         now = datetime.datetime.now().strftime('%Y_%m_%d')
-        # for search_bookmark in SearchBookmark.objects.filter(
-        #         include_in_email=True):
-        #     target_folder = "/tmp/emails/%s/%s" % (now, search_bookmark.user.id)
-        #     subprocess.check_call("mkdir -p %s" % target_folder, shell=True)
-        #     cmd = ('%s %s/grab_chart.js "http://localhost:8000/analyse/#%s" %s/%s' %
-        #            (PHANTOM,
-        #             settings.SITE_ROOT + '/frontend/management/commands',
-        #             search_bookmark.url,
-        #             target_folder,
-        #             search_bookmark.id)
-        #     )
-        #     if self.IS_VERBOSE:
-        #         print "Running " + cmd
-        #     subprocess.check_call(cmd, shell=True)
+        for search_bookmark in SearchBookmark.objects.filter(
+                include_in_email=True):
+            target_folder = "/tmp/emails/%s/%s" % (now, search_bookmark.user.id)
+            subprocess.check_call("mkdir -p %s" % target_folder, shell=True)
+            cmd = ('%s %s/grab_chart.js "http://localhost:8000/analyse/#%s" %s/%s' %
+                   (PHANTOM,
+                    settings.SITE_ROOT + '/frontend/management/commands',
+                    search_bookmark.url,
+                    target_folder,
+                    search_bookmark.id)
+            )
+            if self.IS_VERBOSE:
+                print "Running " + cmd
+            subprocess.check_call(cmd, shell=True)
         for user_id in os.listdir("/tmp/emails/%s" % (now)):
             user = User.objects.get(id=int(user_id))
             if self.IS_VERBOSE:
