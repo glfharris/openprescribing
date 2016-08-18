@@ -1,8 +1,17 @@
 from django.http import HttpResponse
+from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
+from django.contrib import messages
 from frontend.models import Chemical, Prescription
 from frontend.models import Practice, SHA, PCT, Section
 from frontend.models import Measure
+from frontend.models import OrgBookmark
+from frontend.forms import OrgBookmarkForm
+from django.contrib.auth import authenticate
+from django.shortcuts import redirect
+from allauth.account.utils import perform_login
+from allauth.account import app_settings
 
 
 ##################################################
@@ -165,13 +174,69 @@ def measure_for_practices_in_ccg(request, ccg_code, measure):
 
 def measures_for_one_ccg(request, ccg_code):
     requested_ccg = get_object_or_404(PCT, code=ccg_code)
-    practices = Practice.objects.filter(ccg=requested_ccg).filter(setting=4).order_by('name')
+    if request.method == 'POST':
+        form = OrgBookmarkForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data['email']
+            pct = form.cleaned_data['pct']
+            try:
+                user = User.objects.create_user(
+                    username=email, email=email)
+            except IntegrityError:
+                user = User.objects.get(username=email)
+                messages.success(
+                    request,
+                    "Thanks, you're now subscribed to monthly "
+                    "alerts about this practice")
+            user = authenticate(key=user.profile.key)
+            OrgBookmark.objects.get_or_create(
+                user=user,
+                pct=pct, include_in_email=True
+            )
+            return perform_login(
+                request, user,
+                app_settings.EmailVerificationMethod.MANDATORY,
+                signup=True)
+
+
+    else:
+        form = OrgBookmarkForm(
+            initial={'pct': requested_ccg.pk, 'next': request.path})
+    # XXX test if they're already signed up and don't show the form if not
+    if request.user.is_authenticated():
+        signed_up_for_alert = request.user.orgbookmark_set.filter(
+            pct=requested_ccg)
+    else:
+        signed_up_for_alert = False
+    practices = Practice.objects.filter(
+        ccg=requested_ccg).filter(
+            setting=4).order_by('name')
     context = {
         'ccg': requested_ccg,
         'practices': practices,
-        'page_id': ccg_code
+        'page_id': ccg_code,
+        'form': form,
+        'signed_up_for_alert': signed_up_for_alert
     }
     return render(request, 'measures_for_one_ccg.html', context)
+
+
+def last_bookmark(request):
+    """Redirect the logged in user to the CCG they last bookmarked, or if
+    they're not logged in, just go straight to the homepage -- both
+    with a message.
+
+    """
+    if request.user.is_authenticated():
+        ccg = request.user.orgbookmark_set.last().pct
+        messages.success(
+            request,
+            "Thanks, you're now subscribed to monthly "
+            "alerts about this practice")
+        return redirect('measures_for_one_ccg', ccg_code=ccg.code)
+    else:
+        messages.success("Thanks, you're now subscribed to monthly alerts")
+        return redirect('home')
 
 
 def measures_for_one_practice(request, code):

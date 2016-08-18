@@ -27,7 +27,7 @@ class Command(BaseCommand):
             self.IS_VERBOSE = True
         now = datetime.datetime.now().strftime('%Y_%m_%d')
         for search_bookmark in SearchBookmark.objects.filter(
-                include_in_email=True):
+                include_in_email=True, user__is_active=True):
             target_folder = "/tmp/emails/%s/%s" % (now, search_bookmark.user.id)
             subprocess.check_call("mkdir -p %s" % target_folder, shell=True)
             cmd = ('%s %s/grab_chart.js "http://localhost:8000/analyse/#%s" %s/%s' %

@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, include, url
 from django.conf.urls.static import static
 from django.conf import settings
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 from django.core.urlresolvers import reverse
 from common import utils
 import api
@@ -81,6 +81,9 @@ urlpatterns = [
     url(r'^admin/',include(admin.site.urls)),
 
     # bookmarks
+    url(r'^bookmarks/(?P<key>[0-9a-z]+)$',
+        bookmark_views.login_from_key,
+        name='bookmark-login'),
     url(r'^bookmarks/$',
         bookmark_views.BookmarkList.as_view(),
         name='bookmark-list'),
@@ -108,5 +111,8 @@ urlpatterns = [
         bookmark_views.OrgBookmarkDelete.as_view(),
         name='orgbookmark-delete'
     ),
-
+    url(r'^last_bookmark/$',
+        frontend_views.last_bookmark,
+        name='last-bookmark'
+    )
 ]

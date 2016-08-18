@@ -237,6 +237,8 @@ AUTHENTICATION_BACKENDS = (
     'django.contrib.auth.backends.ModelBackend',
     # `allauth` specific authentication methods, such as login by e-mail
     'allauth.account.auth_backends.AuthenticationBackend',
+    # custom backend to support logging in via a hash
+    'frontend.backends.SecretKeyBackend'
 )
 
 
@@ -273,8 +275,15 @@ CORS_ALLOW_METHODS = (
 )
 
 ANYMAIL = {
-    "MAILGUN_API_KEY": "key-10973675f49f754eb5520e3d4785ed0e",
+    "MAILGUN_API_KEY": "key-b503fcc6f1c029088f2b3f9b3faa303c",
 }
 
+ACCOUNT_ADAPTER = 'frontend.account.adapter.MessageBlockingAdapter'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+LOGIN_REDIRECT_URL = "last-bookmark"
+LOGIN_URL = "home"
 EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
-DEFAULT_FROM_EMAIL = "hello@openprescribing.net"
+DEFAULT_FROM_EMAIL = "hello@sandbox51abd1919b4149a4a2baf562cea9c11f.mailgun.org"

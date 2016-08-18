@@ -1,0 +1,10 @@
+{% load account %}{% autoescape off %}Hello from OpenPrescribing!
+
+You're receiving this e-mail because someone has requested monthly alerts about prescribing in {{ user.orgbookmark_set.last.pct.name }}.
+
+To confirm this is correct, go to {{ activate_url }}
+
+If that wasn't you, just ignore this email.
+{% endautoescape %}
+
+https://openprescribing.net

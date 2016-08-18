@@ -1,7 +1,9 @@
 from pyquery import PyQuery as pq
 from django.core import management
+from django.core import mail
 from django.test import TestCase
-from frontend.models import Measure, MeasureValue, MeasureGlobal
+from frontend.models import Measure
+
 
 def setUpModule():
     fix_dir = 'frontend/tests/fixtures/'
@@ -144,6 +146,12 @@ class TestFrontendViews(TestCase):
         self.assertEqual(title.text(), 'CCG: NHS Corby')
         practices = doc('#practices li')
         self.assertEqual(len(practices), 1)
+
+    def test_alert_ccg_email(self):
+        response = self.client.post(
+            '/ccg/03V/', {'email': 'foo@baz.com', 'pct': '03V'})
+        self.assertEqual(len(mail.outbox), 1)
+        print mail.outbox[0].body
 
     def test_call_view_practice_all(self):
         response = self.client.get('/practice/')

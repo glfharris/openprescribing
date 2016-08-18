@@ -2,11 +2,16 @@ from itertools import chain
 from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render, get_object_or_404
+from django.contrib.auth import authenticate
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import login
+from django.shortcuts import redirect
+from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from frontend.models import SearchBookmark, OrgBookmark
+from frontend.models import Profile
 
 
 class BookmarkList(ListView):
@@ -101,3 +106,12 @@ class OrgBookmarkUpdate(UpdateView):
 class OrgBookmarkDelete(DeleteView):
     model = OrgBookmark
     success_url = reverse_lazy('bookmark-list')
+
+
+def login_from_key(request, key):
+    user = authenticate(key=key)
+    if user:
+        login(request, user)
+    else:
+        raise PermissionDenied
+    return redirect('bookmark-list')

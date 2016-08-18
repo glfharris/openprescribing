@@ -24,13 +24,5 @@ class Migration(migrations.Migration):
                 ('practice', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='frontend.Practice')),
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-        ),
-        migrations.RemoveField(
-            model_name='searchbookmark',
-            name='denominator',
-        ),
-        migrations.RemoveField(
-            model_name='searchbookmark',
-            name='numerator',
-        ),
+        )
     ]

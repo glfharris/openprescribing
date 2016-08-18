@@ -41,6 +41,17 @@ class='hidden'
 </div>
 
 <hr/>
+{% if not signed_up_for_alert %}
+<p>
+  Get monthy alerts about prescribing at this CCG:
+  <form method="post" class="form">
+    {% csrf_token %}
+    {{ form }}
+    <input class="btn btn-primary" type="submit" value="Subscribe">
+  </form>
+</p>
+{% endif %}
+
 
 <div id="intro">
 
