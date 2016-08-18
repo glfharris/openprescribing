@@ -358,10 +358,6 @@ class Measure(models.Model):
     title = models.CharField(max_length=500)
     description = models.TextField()
     why_it_matters = models.TextField(null=True, blank=True)
-    numerator_description = models.CharField(max_length=500, null=True,
-                                             blank=True)
-    denominator_description = models.CharField(max_length=500, null=True,
-                                               blank=True)
     numerator_short = models.CharField(max_length=100, null=True, blank=True)
 
     denominator_short = models.CharField(max_length=100, null=True, blank=True)
@@ -370,6 +366,7 @@ class Measure(models.Model):
     url = models.URLField(null=True, blank=True)
     is_percentage = models.NullBooleanField()
     is_cost_based = models.NullBooleanField()
+    low_is_good = models.NullBooleanField()
 
     def __str__(self):
         return self.name
@@ -505,3 +502,22 @@ class OrgBookmark(models.Model):
 
     def __unicode__(self):
         return 'Org Bookmark: ' + self.name()
+
+
+class ImportLogManager(models.Manager):
+    def latest_in_category(self, category):
+        return self.filter(category=category).first()
+
+
+class ImportLog(models.Model):
+    '''
+    Keep track of when things have been imported
+    '''
+    imported_at = models.DateTimeField(auto_now_add=True)
+    current_at = models.DateField(db_index=True)
+    filename = models.CharField(max_length=200)
+    category = models.CharField(max_length=15, db_index=True)
+    objects = ImportLogManager()
+
+    class Meta:
+        ordering = ["-current_at"]

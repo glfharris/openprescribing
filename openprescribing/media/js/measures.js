@@ -1,6 +1,7 @@
 (function() {
   var _ = require('underscore');
   var mu = require('./src/measure_utils');
+  var config = require('./src/config');
   var Highcharts = require('Highcharts');
   var chartOptions = require('./src/highcharts-options');
   var L = require('mapbox.js');
@@ -34,8 +35,7 @@
 
       _this.allGraphsRendered = false;
       _this.graphsToRenderInitially = 24;
-
-      var options = measureData;
+      var options = measureData; // defined in handlebars templates
       options.rollUpBy = (options.measure) ? 'org_id' : 'measure_id';
 
       _this.setUpShowPractices();
@@ -51,13 +51,12 @@
 
           _.extend(options,
             mu.getCentilesAndYAxisExtent(globalData, options, centiles));
-
-          chartData = mu.annotateAndSortData(chartData, options,
+          chartData = mu.annotateData(chartData, options,
             NUM_MONTHS_FOR_RANKING);
           chartData = mu.addChartAttributes(chartData, globalData,
             options.globalCentiles, centiles, options,
             NUM_MONTHS_FOR_RANKING);
-
+          chartData = mu.sortData(chartData);
           var perf = mu.getPerformanceSummary(chartData, options,
             NUM_MONTHS_FOR_RANKING);
           $(_this.el.perfSummary).html(summaryTemplate(perf));
@@ -119,7 +118,7 @@
         var map = L.mapbox.map(_this.el.mapPanel,
           'mapbox.streets').setView([52.905, -1.79], 6);
         map.scrollWheelZoom.disable();
-        var url = '/api/1.0/org_location/?org_type=' +
+        var url = config.apiHost + '/api/1.0/org_location/?org_type=' +
           options.orgType.toLowerCase();
         url += '&q=' + options.orgId;
         var layer = L.mapbox.featureLayer()
@@ -147,7 +146,7 @@
         return $(this).data('costsaving') !== 0;
       });
       chartsBySaving.sort(function(a, b) {
-        return Number(a.costsaving) - Number(b.costsaving);
+        return $(b).data('costsaving') - $(a).data('costsaving');
       });
       $(_this.el.sortButtons).click(function() {
         $(this).addClass("active").siblings().removeClass("active");

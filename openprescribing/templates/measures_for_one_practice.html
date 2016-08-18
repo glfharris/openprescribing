@@ -18,7 +18,7 @@
 <div class="col-md-6">
 <p class="lead">Address: {{ practice.address_pretty }}</p>
 {% if practice.ccg %}
-<p class="lead">Part of CCG: <a href="{% url 'ccg' practice.ccg.code %}measures">{{ practice.ccg.name }}</a></p>
+<p class="lead">Part of CCG: <a href="{% url 'measures_for_one_ccg' practice.ccg.code %}">{{ practice.ccg.name }}</a></p>
 {% endif %}
 {% if practice.list_size_13 %}
 <p class="lead">Registered patients in 2013/14: {{ practice.list_size_13|intcomma }}</p>
@@ -40,7 +40,7 @@
 </div>
 {% endif %}
 
-<p>>We have brought together various prescribing measures to show how this organisation compares with its peers across NHS England. These are indicative only, and should be approached with caution. <a href="{% url 'caution' %}#metrics">Read more about measures</a>.</p>
+<p>We have brought together various prescribing measures to show how this organisation compares with its peers across NHS England. These are indicative only, and should be approached with caution. <a href="{% url 'caution' %}#metrics">Read more about measures</a>.</p>
 
 <p id="perfsummary">Loading...</p>
 
@@ -49,7 +49,7 @@
 <div id="toggle">Sort measures by:
 <div class="btn-group" id="order">
     <button type="button" data-orderby="percentile" class="btn btn-default active" aria-label="Percentile">
-        Percentile
+        Potential for improvement
     </button>
     <button type="button" data-orderby="savings" class="btn btn-default" aria-label="Potential savings">
         Potential savings
@@ -86,8 +86,8 @@
         <div class="panel-body" class="row">
             <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6 inner">
                 <p><strong>Why it matters:</strong> {{ why_it_matters }}</p>
-                <p><strong>Description:</strong> {{ description }}</p>
-                <p>{{{ costDescription }}}</p>
+                <p><strong>Description:</strong> {{{ description }}}</p>
+                <p><strong>Performance:</strong> {{{ chartExplanation }}}</p>
                 <p><strong>Explore:</strong> prescribing of this measure by <a href="{{ chartTitleUrl }}">other practices in the same CCG</a>.</p>
             </div>
             <div class="col-xs-12 col-sm-6 col-md-6 col-lg-6" id="{{ chartId }}">

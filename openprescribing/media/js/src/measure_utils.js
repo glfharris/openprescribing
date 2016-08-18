@@ -2,15 +2,15 @@ global.jQuery = require('jquery');
 global.$ = global.jQuery;
 var _ = require('underscore');
 var humanize = require('humanize');
-
+var config = require('./config');
 var utils = {
 
   getDataUrls: function(options) {
-    var panelUrl = '/api/1.0/measure_by_';
+    var panelUrl = config.apiHost + '/api/1.0/measure_by_';
     panelUrl += options.orgType.toLowerCase() + '/?format=json';
     var urls = {
       panelMeasuresUrl: panelUrl,
-      globalMeasuresUrl: '/api/1.0/measure/?format=json'
+      globalMeasuresUrl: config.apiHost + '/api/1.0/measure/?format=json'
     };
     if (options.orgId) {
       urls.panelMeasuresUrl += '&org=' + options.orgId;
@@ -52,28 +52,44 @@ var utils = {
     };
   },
 
-  annotateAndSortData: function(panelData, options, numMonths) {
+  annotateData: function(panelData, options, numMonths) {
     /*
     Create a new array with an item for each chart, each chart being
     either a measure or an organisation, as appropriate.
     Annotate each chart with the mean percentile over the past
     N months, and cost saving if appropriate.
-    Sort the array by percentile, pushing nulls to the bottom.
     */
-    var data = [];
     var _this = this;
     if (panelData.length) {
       if (options.rollUpBy !== 'measure_id') {
         panelData = _this._rollUpByOrg(panelData[0], options.orgType);
       }
       panelData = _this._getSavingAndPercentilePerItem(panelData,
-        numMonths);
-      data = _.sortBy(panelData, function(d) {
-        if (d.meanPercentile === null) return -1;
-        return d.meanPercentile;
-      }).reverse();
+                                                       numMonths);
     }
-    return data;
+    return panelData;
+  },
+
+  sortData: function(panelData) {
+    /*
+       Sort data such that the worst scores come first (but nulls
+       always come at the bottom).
+    */
+    var sortedArray = _(panelData).chain().sortBy(function(d) {
+      // Sort by `id` first, so that tiles are always returned in a
+      // predictable order
+      return d.id;
+    }).sortBy(function(d) {
+      // Now by score, respecting `lowIsGood`
+      var score = d.meanPercentile;
+      if (score === null) {
+        score = 101;
+      } else if (d.lowIsGood) {
+        score = 100 - score;
+      }
+      return score;
+    }).value();
+    return sortedArray;
   },
 
   _rollUpByOrg: function(data, orgType) {
@@ -124,6 +140,13 @@ var utils = {
         var saving = (num.cost_savings) ? num.cost_savings['50'] : null;
         return memo + saving;
       }, null);
+      // normalise to camelcase convention
+      if (!('isPercentage' in d)) {
+        d.isPercentage = d.is_percentage;
+      }
+      if (!('isCostBased' in d)) {
+        d.isCostBased = d.is_cost_based;
+      }
       if (!('numeratorShort' in d)) {
         d.numeratorShort = d.numerator_short;
         d.denominatorShort = d.denominator_short;
@@ -140,7 +163,7 @@ var utils = {
     */
     var perf = {
       total: 0,
-      aboveMedian: 0,
+      worseThanMedian: 0,
       potentialSavings50th: 0,
       potentialSavings10th: 0,
       orgId: options.orgId,
@@ -150,8 +173,12 @@ var utils = {
       _.each(orderedData, function(d) {
         if (d.meanPercentile !== null) {
           perf.total += 1;
+          if (d.lowIsGood && d.meanPercentile > 50) {
+            perf.worseThanMedian += 1;
+          } else if (!d.lowIsGood && d.meanPercentile < 50) {
+            perf.worseThanMedian += 1;
+          }
           if (d.meanPercentile > 50) {
-            perf.aboveMedian += 1;
             perf.potentialSavings50th +=
               (options.isCostBasedMeasure) ? d.costSaving50th : 0;
           }
@@ -163,17 +190,17 @@ var utils = {
       });
       if (options.rollUpBy === 'measure_id') {
         perf.performanceDescription = "Over the past " + numMonths +
-          " months, this organisation has prescribed above the median on " +
-          perf.aboveMedian + " of " + perf.total + " measures. ";
+          " months, this organisation has prescribed worse than the median on " +
+          perf.worseThanMedian + " of " + perf.total + " measures. ";
       } else {
         perf.performanceDescription = "Over the past " + numMonths +
-          " months, " + perf.aboveMedian + " of " + perf.total + ' ';
+          " months, " + perf.worseThanMedian + " of " + perf.total + ' ';
         perf.performanceDescription += (options.orgType === 'practice') ?
           "practices " : "CCGs ";
-        perf.performanceDescription += "have prescribed above the " +
+        perf.performanceDescription += "have prescribed worse than the " +
           "national median. ";
       }
-      perf.proportionAboveMedian = perf.aboveMedian / perf.total;
+      perf.proportionAboveMedian = perf.worseThanMedian / perf.total;
       if (perf.proportionAboveMedian >= 0.7) {
         perf.rank = 'poor';
       } else if (perf.proportionAboveMedian >= 0.45) {
@@ -238,18 +265,19 @@ var utils = {
     /*
     Expects an array that represents a series of charts. For
     each chart, add Highcharts attributes to the data,
-    merge in centiles from the global data, and
+    merge in centiles and low_is_good from the global data, and
     add chart title, URL, description etc.
     */
     var _this = this;
     var newData = [];
     _.each(data, function(d) {
       d.data = _this._addHighchartsXAndY(d.data, false,
-        d.is_percentage, options, null);
+        d.isPercentage, options, null);
       if (options.rollUpBy === 'measure_id') {
         // If each chart is a different measure, get the
-        // centiles for that measure.
+        // centiles for that measure, and if lowIsGood
         var series = _.findWhere(globalData, {id: d.id});
+        d.lowIsGood = series.low_is_good;
         d.globalCentiles = {};
         _.each(centiles, function(i) {
           d.globalCentiles[i] = _this._addHighchartsXAndY(series.data,
@@ -257,6 +285,7 @@ var utils = {
         });
       } else {
         d.globalCentiles = globalCentiles;
+        d.lowIsGood = options.lowIsGood;
       }
       d.chartId = d.id;
       _.extend(d, _this._getChartTitleEtc(d, options, numMonths));
@@ -303,29 +332,29 @@ var utils = {
       // organisation page.
       chartTitle = d.id + ': ' + d.name;
       chartTitleUrl = '/' + options.orgType.toLowerCase() +
-        '/' + d.id + '/measures';
+        '/' + d.id;
     }
     if (d.meanPercentile === null) {
       chartExplanation = 'No data available.';
-    } else if (d.isCostBased) {
-      chartExplanation = '<strong>Cost savings:</strong> ';
-      if (d.costSaving50th < 0) {
-        chartExplanation += 'By prescribing better than the median, ' +
-          'this ' + options.orgType + ' has saved the NHS £' +
-          humanize.numberFormat((d.costSaving50th * -1), 2) +
-          ' over the past ' + numMonths + ' months.';
-      } else {
-        chartExplanation += 'If it had prescribed in line with the ' +
-          'median, this ' + options.orgType + ' would have spent £' +
-          humanize.numberFormat(d.costSaving50th, 2) +
-          ' less over the past ' + numMonths + ' months.';
-      }
     } else {
       var p = humanize.numberFormat(d.meanPercentile, 0);
-      chartExplanation = 'This organisation was at the ' +
+      chartExplanation = 'This ' + options.orgType + ' was at the ' +
         humanize.ordinal(p) +
         ' percentile on average across the ' +
-        'past ' + numMonths + ' months.';
+        'past ' + numMonths + ' months. ';
+        if (d.isCostBased || options.isCostBasedMeasure) {
+          if (d.costSaving50th < 0) {
+            chartExplanation += 'By prescribing better than the median, ' +
+              'this ' + options.orgType + ' has saved the NHS £' +
+              humanize.numberFormat((d.costSaving50th * -1), 2) +
+              ' over the past ' + numMonths + ' months.';
+          } else {
+            chartExplanation += 'If it had prescribed in line with the ' +
+              'median, this ' + options.orgType + ' would have spent £' +
+              humanize.numberFormat(d.costSaving50th, 2) +
+              ' less over the past ' + numMonths + ' months.';
+          }
+      }
     }
     return {
       chartTitle: chartTitle,
@@ -405,6 +434,9 @@ var utils = {
         // because it prefers that formatting. Force zero as the lowest value.
       min: _.max([0, ymin])
     };
+    if (!d.lowIsGood) {
+      chOptions.yAxis.reversed = true;
+    }
     chOptions.tooltip = {
       formatter: function() {
         var num = humanize.numberFormat(this.point.numerator, 0);
