@@ -3,8 +3,9 @@ from django.http import HttpResponse
 from django import forms
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth import authenticate
+from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-from django.core.urlresolvers import reverse_lazy
+from django.core.urlresolvers import reverse_lazy, reverse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import login
 from django.shortcuts import redirect
@@ -12,6 +13,7 @@ from django.core.exceptions import PermissionDenied
 from django.utils.decorators import method_decorator
 from frontend.models import SearchBookmark, OrgBookmark
 from frontend.models import Profile
+from frontend.forms import BookmarkListForm
 
 
 class BookmarkList(ListView):
@@ -21,14 +23,47 @@ class BookmarkList(ListView):
     template_name = 'bookmarks/bookmark_list.html'
     model = SearchBookmark
 
+    def post(self, request, *args, **kwargs):
+        count = 0
+        if request.POST.get('unsuball'):
+            org_bookmarks = [x.id for x in self._org_bookmarks()]
+            search_bookmarks = [x.id for x in self._search_bookmarks()]
+        else:
+            org_bookmarks = request.POST.getlist('org_bookmarks')
+            search_bookmarks = request.POST.getlist('search_bookmarks')
+        for b in org_bookmarks:
+            OrgBookmark.objects.get(pk=b).delete()
+            count += 1
+        for b in search_bookmarks:
+            SearchBookmark.objects.get(pk=b).delete()
+            count += 1
+        if count > 0:
+            messages.success(
+                request,
+                "Unsubscribed from %s alerts" % count)
+        return redirect(
+            reverse('bookmark-list'))
+
+    def _search_bookmarks(self):
+        return SearchBookmark.objects.filter(
+            user__id=self.request.user.id)
+
+    def _org_bookmarks(self):
+        return OrgBookmark.objects.filter(
+            user__id=self.request.user.id)
+
     def get_context_data(self):
-        search_bookmarks = SearchBookmark.objects.filter(
-            user__id=self.request.user.id)
-        org_bookmarks = OrgBookmark.objects.filter(
-            user__id=self.request.user.id)
+        search_bookmarks = self._search_bookmarks()
+        org_bookmarks = self._org_bookmarks()
+        form = BookmarkListForm(
+            org_bookmarks=org_bookmarks,
+            search_bookmarks=search_bookmarks
+        )
         return {
             'search_bookmarks': search_bookmarks,
-            'org_bookmarks': org_bookmarks
+            'org_bookmarks': org_bookmarks,
+            'form': form,
+            'count': search_bookmarks.count() + org_bookmarks.count()
         }
 
 class SearchBookmarkForm(forms.ModelForm):

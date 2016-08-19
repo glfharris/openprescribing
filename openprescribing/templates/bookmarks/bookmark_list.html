@@ -4,38 +4,27 @@
 {% block title %}Bookmarks for {{ request.user }} {% endblock %}
 
 {% block content %}
-    <h2>Search Bookmarks</h2>
-    <ul>
-        {% for bookmark in search_bookmarks %}
-        <li>
-          <h3>{{ bookmark.name }}</h3>
-          <a class="btn btn-primary" href="/analyse/#{{ bookmark.url }}">View graph</a>
-          <a class="btn btn-warning" href="{% url 'searchbookmark-update' pk=bookmark.id %}">Change</a>
+<h2>Your alerts</h2>
+{% if org_bookmarks or search_bookmarks %}
+  <p>You are currently subscribed to {{ count }} monthly alerts.</p>
+  <form class="form" method="post">
 
-          <form class="form form-inline" method="post" action="{% url 'searchbookmark-delete' pk=bookmark.id %}">
-            {% csrf_token %}
-            <input type="submit" class="btn btn-danger" value="delete">
-          </form>
+    <hr>
+    <input class="btn btn-primary" type="submit" name="unsuball" value="Unsubscribe from all">
+    <hr>
 
-        </li>
-        {% endfor %}
-    </ul>
+    <p>
+      Or unsubscribe from specific alerts
+    </p>
+    {{ form }}
+    {% csrf_token %}
+    <input class="btn btn-primary" type="submit" value="Unsubscribe">
+  </form>
+{% else %}
 
-    <h2>Org Bookmarks</h2>
-    <ul>
-        {% for bookmark in org_bookmarks %}
-        <li>
-          <h3>{{ bookmark.name }}</h3>
-          <a class="btn btn-primary" href="{{ bookmark.dashboard_url }}">View graph</a>
-          <a class="btn btn-warning" href="{% url 'orgbookmark-update' pk=bookmark.id %}">Change</a>
+  <p>You are not subscribed to any alerts.</p>
 
-          <form class="form form-inline" method="post" action="{% url 'orgbookmark-delete' pk=bookmark.id %}">
-            {% csrf_token %}
-            <input type="submit" class="btn btn-danger" value="delete">
-          </form>
+{% endif %}
 
-        </li>
-        {% endfor %}
-    </ul>
 
 {% endblock %}
