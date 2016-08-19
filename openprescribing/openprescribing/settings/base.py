@@ -288,4 +288,4 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 LOGIN_REDIRECT_URL = "last-bookmark"
 LOGIN_URL = "home"
 EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
-DEFAULT_FROM_EMAIL = "hello@sandbox51abd1919b4149a4a2baf562cea9c11f.mailgun.org"
+DEFAULT_FROM_EMAIL = "hello@openprescribing.net"
