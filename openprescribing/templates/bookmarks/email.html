@@ -190,7 +190,7 @@ ol li {
       <table>
         <tr>
           <td>
-            <h1>Your bookmarks</h1>
+            <h1>Your alerts</h1>
             {% for image, bookmark in images_and_bookmarks %}
               <h2>{{ bookmark.name }}</h2>
               <a href="https://openprescribing.net/analyse/#{{ bookmark.url }}">
@@ -220,7 +220,7 @@ ol li {
         <table>
           <tr>
             <td align="center">
-              <p>Don't like these annoying emails? <a href="#"><unsubscribe>Unsubscribe</unsubscribe></a>.
+              <p>Don't like these annoying emails? <a href="{{ unsubscribe_link }}"><unsubscribe>Unsubscribe</unsubscribe></a>.
               </p>
             </td>
           </tr>

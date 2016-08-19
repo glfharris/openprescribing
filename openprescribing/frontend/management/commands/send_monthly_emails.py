@@ -8,6 +8,7 @@ from django.core.mail import EmailMultiAlternatives
 from anymail.message import attach_inline_image_file
 from django.conf import settings
 from django.template.loader import get_template
+from django.urls import reverse
 from frontend.models import SearchBookmark, User
 
 PHANTOM = '/usr/local/bin/phantomjs'
@@ -54,11 +55,12 @@ class Command(BaseCommand):
             for image in glob.glob("/tmp/emails/%s/%s/*png" % (now, user.id)):
                 images.append(attach_inline_image_file(msg, image))
 
-            import pdb; pdb.set_trace()
-
             html = transform(html_email.render(
                 context={
                     'images_and_bookmarks': zip(images, bookmarks),
+                    'unsubscribe_link': reverse(
+                        'bookmark-login',
+                        key=user.profile.key)
                 }))
             msg.attach_alternative(html, "text/html")
 
@@ -66,7 +68,7 @@ class Command(BaseCommand):
             msg.metadata = {"user_id": user.id, "experiment_variation": 1}
             msg.tags = ["monthly_update"]
             msg.track_clicks = True
-            msg.esp_extra = {"sender_domain": "sandbox51abd1919b4149a4a2baf562cea9c11f.mailgun.org"}
+            msg.esp_extra = {"sender_domain": "openprescribing.net"}
             sent = msg.send()
             if self.IS_VERBOSE:
                 print "Sent %s messages" % sent
