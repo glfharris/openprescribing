@@ -175,34 +175,13 @@ def measure_for_practices_in_ccg(request, ccg_code, measure):
 def measures_for_one_ccg(request, ccg_code):
     requested_ccg = get_object_or_404(PCT, code=ccg_code)
     if request.method == 'POST':
-        form = OrgBookmarkForm(request.POST)
-        if form.is_valid():
-            email = form.cleaned_data['email']
-            pct = form.cleaned_data['pct']
-            try:
-                user = User.objects.create_user(
-                    username=email, email=email)
-            except IntegrityError:
-                user = User.objects.get(username=email)
-                messages.success(
-                    request,
-                    "Thanks, you're now subscribed to monthly "
-                    "alerts about this practice")
-            user = authenticate(key=user.profile.key)
-            OrgBookmark.objects.get_or_create(
-                user=user,
-                pct=pct, include_in_email=True
-            )
-            return perform_login(
-                request, user,
-                app_settings.EmailVerificationMethod.MANDATORY,
-                signup=True)
-
-
-    else:
-        form = OrgBookmarkForm(
-            initial={'pct': requested_ccg.pk, 'next': request.path})
-    # XXX test if they're already signed up and don't show the form if not
+        form = _handleCreateBookmark(
+            request,
+            OrgBookmark,
+            OrgBookmarkForm,
+            'CCG', 'pct')
+    form = OrgBookmarkForm(
+        initial={'pct': requested_ccg.pk, 'next': request.path})
     if request.user.is_authenticated():
         signed_up_for_alert = request.user.orgbookmark_set.filter(
             pct=requested_ccg)
@@ -239,11 +218,58 @@ def last_bookmark(request):
         return redirect('home')
 
 
+def _handleCreateBookmark(request, subject_class,
+                          subject_form_class,
+                          subject_name,
+                          subject_field_id):
+    form = subject_form_class(request.POST)
+    if form.is_valid():
+        email = form.cleaned_data['email']
+        subject = form.cleaned_data[subject_field_id]
+        try:
+            user = User.objects.create_user(
+                username=email, email=email)
+        except IntegrityError:
+            user = User.objects.get(username=email)
+            messages.success(
+                request,
+                "Thanks, you're now subscribed to monthly "
+                "alerts about this %s" % subject_name)
+        user = authenticate(key=user.profile.key)
+        kwargs = {
+            'user': user,
+            subject_field_id: subject,
+            'include_in_email': True
+        }
+        subject_class.objects.get_or_create(**kwargs)
+        return perform_login(
+            request, user,
+            app_settings.EmailVerificationMethod.MANDATORY,
+            signup=True)
+    return form
+
+
 def measures_for_one_practice(request, code):
     p = get_object_or_404(Practice, code=code)
+    if request.method == 'POST':
+        form = _handleCreateBookmark(
+            request,
+            OrgBookmark,
+            OrgBookmarkForm,
+            'practice', 'practice')
+    else:
+        form = OrgBookmarkForm(
+            initial={'practice': p.pk, 'next': request.path})
+    if request.user.is_authenticated():
+        signed_up_for_alert = request.user.orgbookmark_set.filter(
+            practice=p)
+    else:
+        signed_up_for_alert = False
     context = {
         'practice': p,
-        'page_id': code
+        'page_id': code,
+        'form': form,
+        'signed_up_for_alert': signed_up_for_alert
     }
     return render(request, 'measures_for_one_practice.html', context)
 

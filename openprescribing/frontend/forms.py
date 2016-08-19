@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from frontend.models import PCT
+from frontend.models import PCT, Practice
 
 
 class BookmarkListForm(forms.Form):
@@ -36,13 +36,29 @@ class OrgBookmarkForm(forms.Form):
         label="",
         widget=forms.TextInput(attrs={'placeholder': 'Email address'})
     )
-    pct = forms.CharField(widget=forms.HiddenInput())
+    pct = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
+    practice = forms.CharField(
+        widget=forms.HiddenInput(),
+        required=False
+    )
     next = forms.CharField(widget=forms.HiddenInput())
 
-    def clean_pct(self):
+    def clean(self):
         pct_id = self.cleaned_data['pct']
-        try:
-            pct = PCT.objects.get(pk=pct_id)
-        except PCT.DoesNotExist:
-            raise forms.ValidationError("PCT %s does not exist" % pct_id)
-        return pct
+        practice_id = self.cleaned_data['practice']
+        if pct_id:
+            try:
+                self.cleaned_data['pct'] = PCT.objects.get(pk=pct_id)
+            except PCT.DoesNotExist:
+                raise forms.ValidationError("CCG %s does not exist" % pct_id)
+        elif practice_id:
+            try:
+                self.cleaned_data['practice'] = Practice.objects.get(pk=practice_id)
+            except Practice.DoesNotExist:
+                raise forms.ValidationError("Practice %s does not exist" % pct_id)
+        else:
+            raise forms.ValidationError("No practice or CCG specified")
+        return self.cleaned_data

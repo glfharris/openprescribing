@@ -192,7 +192,8 @@ CONTRIB_APPS = (
     # 'allauth.socialaccount.providers.facebook',
     # 'allauth.socialaccount.providers.google',
     'allauth.socialaccount.providers.twitter',
-    'anymail'
+    'anymail',
+    'crispy_forms'
 )
 
 # See: https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
