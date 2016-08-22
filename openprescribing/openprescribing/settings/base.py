@@ -249,7 +249,7 @@ AUTHENTICATION_BACKENDS = (
 WSGI_APPLICATION = '%s.wsgi.application' % SITE_NAME
 # END WSGI CONFIGURATION
 
-TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+TEST_RUNNER = 'frontend.tests.custom_runner.AssetBuildingTestRunner'
 
 CONN_MAX_AGE = 1200
 
