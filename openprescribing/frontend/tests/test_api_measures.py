@@ -1,11 +1,9 @@
-import csv
-import os
 import json
-import unittest
 from django.core import management
 from django.test import TestCase
 from common import utils
-from frontend.models import SHA, PCT, Chemical, Practice
+from frontend.models import SHA, PCT, Chemical, Practice, OrgBookmark
+from frontend.views import bookmark_views
 
 
 def setUpModule():
@@ -66,10 +64,25 @@ def setUpModule():
         'measure': measure_id
     }
     management.call_command('import_measures', *args, **opts)
+    measure_id = 'keppra'
+    opts = {
+        'month': month,
+        'measure': measure_id
+    }
+    management.call_command('import_measures', *args, **opts)
 
 
 def tearDownModule():
     management.call_command('flush', verbosity=0, interactive=False)
+
+
+class TestBookmarkViews(TestCase):
+    def test_org_context(self):
+        for pct_id in [x.code for x in PCT.objects.all()]:
+            org_bookmark = OrgBookmark(pct_id=pct_id)
+            print pct_id
+            print bookmark_views.org_alert_email_context(org_bookmark)
+
 
 
 class TestAPIMeasureViews(TestCase):
