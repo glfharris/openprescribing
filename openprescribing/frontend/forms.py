@@ -5,7 +5,7 @@ from frontend.models import PCT, Practice
 
 class BookmarkListForm(forms.Form):
     org_bookmarks = forms.MultipleChoiceField(
-        label="Alerts about organisations",
+        label="",
         widget=forms.CheckboxSelectMultiple())
     search_bookmarks = forms.MultipleChoiceField(
         label="Alerts about searches",

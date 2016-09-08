@@ -290,3 +290,4 @@ LOGIN_REDIRECT_URL = "last-bookmark"
 LOGIN_URL = "home"
 EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
 DEFAULT_FROM_EMAIL = "hello@openprescribing.net"
+CRISPY_TEMPLATE_PACK = 'bootstrap3'

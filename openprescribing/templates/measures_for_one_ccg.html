@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load humanize %}
 {% load template_extras %}
+{% load crispy_forms_tags %}
 
 {% block title %}Prescribing measures for {{ ccg.name }}{% endblock %}
 {% block active_class %}ccg{% endblock %}
@@ -44,9 +45,10 @@ class='hidden'
 {% if not signed_up_for_alert %}
 <p>
   Get monthy alerts about prescribing at this CCG:
-  <form method="post" class="form">
+  <form method="post" class="form form-inline">
     {% csrf_token %}
-    {{ form }}
+    {{ form.non_field_errors }}
+    {{ form | crispy }}
     <input class="btn btn-primary" type="submit" value="Subscribe">
   </form>
 </p>

@@ -56,11 +56,16 @@ class BookmarkList(ListView):
             org_bookmarks=org_bookmarks,
             search_bookmarks=search_bookmarks
         )
+        count = search_bookmarks.count() + org_bookmarks.count()
+        single_bookmark = None
+        if count == 1:
+            single_bookmark = search_bookmarks.first() or org_bookmarks.first()
         return {
             'search_bookmarks': search_bookmarks,
             'org_bookmarks': org_bookmarks,
             'form': form,
-            'count': search_bookmarks.count() + org_bookmarks.count()
+            'count': count,
+            'single_bookmark': single_bookmark
         }
 
 class SearchBookmarkForm(forms.ModelForm):

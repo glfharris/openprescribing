@@ -10,6 +10,7 @@ from frontend.models import OrgBookmark
 from frontend.forms import OrgBookmarkForm
 from django.contrib.auth import authenticate
 from django.shortcuts import redirect
+from django.http.response import HttpResponseRedirect
 from allauth.account.utils import perform_login
 from allauth.account import app_settings
 
@@ -180,8 +181,11 @@ def measures_for_one_ccg(request, ccg_code):
             OrgBookmark,
             OrgBookmarkForm,
             'CCG', 'pct')
-    form = OrgBookmarkForm(
-        initial={'pct': requested_ccg.pk, 'next': request.path})
+        if isinstance(form, HttpResponseRedirect):
+            return form
+    else:
+        form = OrgBookmarkForm(
+            initial={'pct': requested_ccg.pk, 'next': request.path})
     if request.user.is_authenticated():
         signed_up_for_alert = request.user.orgbookmark_set.filter(
             pct=requested_ccg)
@@ -230,11 +234,9 @@ def _handleCreateBookmark(request, subject_class,
             user = User.objects.create_user(
                 username=email, email=email)
         except IntegrityError:
+            # The design is to go here after email confirmation, but
+            # you can also get here if you type in your email twice
             user = User.objects.get(username=email)
-            messages.success(
-                request,
-                "Thanks, you're now subscribed to monthly "
-                "alerts about this %s" % subject_name)
         user = authenticate(key=user.profile.key)
         kwargs = {
             'user': user,
@@ -257,6 +259,8 @@ def measures_for_one_practice(request, code):
             OrgBookmark,
             OrgBookmarkForm,
             'practice', 'practice')
+        if isinstance(form, HttpResponseRedirect):
+            return form
     else:
         form = OrgBookmarkForm(
             initial={'practice': p.pk, 'next': request.path})
