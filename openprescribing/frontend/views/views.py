@@ -211,11 +211,17 @@ def last_bookmark(request):
 
     """
     if request.user.is_authenticated():
-        ccg = request.user.orgbookmark_set.last().pct
-        messages.success(
-            request,
-            "Thanks, you're now subscribed to monthly "
-            "alerts about this practice")
+        try:
+            ccg = request.user.orgbookmark_set.last().pct
+            messages.success(
+                request,
+                "Thanks, you're now subscribed to monthly "
+                "alerts about this practice")
+        except AttributeError:
+            messages.success(
+                request,
+                "Your account is activated, but you are not subscribed "
+                "to any monthly alerts")
         return redirect('measures_for_one_ccg', ccg_code=ccg.code)
     else:
         messages.success("Thanks, you're now subscribed to monthly alerts")
