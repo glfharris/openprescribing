@@ -339,8 +339,7 @@ var queryForm = {
         return str;
       },
       ajax: {
-        url: config.apiHost + "/api/1.0/bnf_code/",
-        dataType: 'json',
+        url: config.apiHost + "/api/1.0/bnf_code/?format=json",
         delay: 50,
         data: function(params) {
           return {
@@ -370,9 +369,9 @@ var queryForm = {
     var optionsOrg = jQuery.extend(true, {}, select2Options);
     optionsOrg.ajax.url = function() {
       if (_this.globalOptions.org == 'CCG') {
-        return config.apiHost + "/api/1.0/org_code?org_type=CCG";
+        return config.apiHost + "/api/1.0/org_code?org_type=CCG&format=json";
       } else {
-        return config.apiHost + "/api/1.0/org_code?org_type=CCG,practice";
+        return config.apiHost + "/api/1.0/org_code?org_type=CCG,practice&format=json";
       }
     };
     $(this.el.orgIds).select2(optionsOrg);

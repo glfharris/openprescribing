@@ -1,8 +1,12 @@
+import requests
+from lxml import html
+
 from django.http import HttpResponse
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
-from django.contrib.auth.models import User
-from django.contrib import messages
+from django.conf import settings
+from django.http import Http404
+
 from frontend.models import Chemical, Prescription
 from frontend.models import Practice, SHA, PCT, Section
 from frontend.models import Measure
@@ -287,6 +291,27 @@ def measures_for_one_practice(request, code):
         'signed_up_for_alert': signed_up_for_alert
     }
     return render(request, 'measures_for_one_practice.html', context)
+
+
+def gdoc_view(request, doc_id):
+    try:
+        gdoc_id = settings.GDOC_DOCS[doc_id]
+    except KeyError:
+        raise Http404("No doc named %s" % doc_id)
+    url = 'https://docs.google.com/document/d/%s/pub?embedded=true' % gdoc_id
+    page = requests.get(url)
+    tree = html.fromstring(page.text)
+
+    content = '<style>' + ''.join(
+        [html.tostring(child)
+         for child in tree.head.xpath('//style')]) + '</style>'
+    content += ''.join(
+        [html.tostring(child)
+         for child in tree.body])
+    context = {
+        'content': content
+    }
+    return render(request, 'gdoc.html', context)
 
 
 ##################################################

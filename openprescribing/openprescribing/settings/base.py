@@ -132,6 +132,7 @@ TEMPLATES = [
                 'django.template.context_processors.tz',
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.request',
+                'frontend.context_processors.support_email'
             ],
             'debug': DEBUG
         },
@@ -165,7 +166,6 @@ ROOT_URLCONF = '%s.urls' % SITE_NAME
 # APP CONFIGURATION
 DJANGO_APPS = (
     # Default Django apps:
-    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -260,35 +260,33 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
         'rest_framework_csv.renderers.CSVRenderer',
     ),
-}
-
-SWAGGER_SETTINGS = {
-    'info': {
-        'contact': 'mail@openprescribing.net',
-        'description': 'description goes here',
-        'title': 'Title',
-    }
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS':
+    'frontend.negotiation.IgnoreAcceptsContentNegotiation',
 }
 
 CORS_URLS_REGEX = r'^/api/.*$'
 CORS_ORIGIN_ALLOW_ALL = True
-CORS_REPLACE_HTTPS_REFERER = True
 CORS_ALLOW_METHODS = (
     'GET'
 )
-
+SUPPORT_EMAIL = 'openprescribing-support@googlegroups.com'
+DEFAULT_FROM_EMAIL = SUPPORT_EMAIL
+SWAGGER_SETTINGS = {
+    'info': {
+        'contact': SUPPORT_EMAIL,
+        'description': 'description goes here',
+        'title': 'Title',
+    }
+}
+GDOC_DOCS = {
+    'zooming': '1lz1uRfNOy2fQ-xSy_6BiLV_7Mgr-Z2V0-VWzo6HlCO0',
+    'analyse': '1HqlJlUA86cnlyJpUxiQdGsM46Gsv9xyZkmhkTqjbwH0',
+    'analyse-by-practice': '1idnk9yczLLBLbYUbp06dMglfivobTNoKY7pA2zCDPI8',
+    'analyse-by-ccg': '1izun1jIGW7Wica-eMkUOU1x7RWqCZ9BJrbWNvsCzWm0'
+}
 ANYMAIL = {
     "MAILGUN_API_KEY": "key-b503fcc6f1c029088f2b3f9b3faa303c",
 }
 
 ACCOUNT_ADAPTER = 'frontend.account.adapter.MessageBlockingAdapter'
 ACCOUNT_EMAIL_REQUIRED = True
-ACCOUNT_EMAIL_VERIFICATION = "optional"
-ACCOUNT_CONFIRM_EMAIL_ON_GET = True
-ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
-LOGIN_REDIRECT_URL = "last-bookmark"
-LOGIN_URL = "home"
-EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
-SUPPORT_EMAIL = 'openprescribing-support@googlegroups.com'
-DEFAULT_FROM_EMAIL = SUPPORT_EMAIL
-CRISPY_TEMPLATE_PACK = 'bootstrap3'
