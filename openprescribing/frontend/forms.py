@@ -34,7 +34,10 @@ class BookmarkListForm(forms.Form):
 class OrgBookmarkForm(forms.Form):
     email = forms.EmailField(
         label="",
-        widget=forms.TextInput(attrs={'placeholder': 'Email address'})
+        widget=forms.TextInput(
+            attrs={
+                'placeholder': 'Email address',
+                'size': '35'})
     )
     pct = forms.CharField(
         widget=forms.HiddenInput(),
