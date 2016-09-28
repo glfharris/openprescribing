@@ -285,10 +285,14 @@ GDOC_DOCS = {
     'analyse-by-practice': '1idnk9yczLLBLbYUbp06dMglfivobTNoKY7pA2zCDPI8',
     'analyse-by-ccg': '1izun1jIGW7Wica-eMkUOU1x7RWqCZ9BJrbWNvsCzWm0'
 }
+
+# Use django-anymail through mailgun for sending emails
+EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
 ANYMAIL = {
     "MAILGUN_API_KEY": "key-b503fcc6f1c029088f2b3f9b3faa303c",
 }
 
+# django-allauth configuration
 ACCOUNT_ADAPTER = 'frontend.account.adapter.MessageBlockingAdapter'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = "optional"
@@ -296,5 +300,6 @@ ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 LOGIN_REDIRECT_URL = "last-bookmark"
 LOGIN_URL = "home"
-EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
+
+# Easy bootstrap styling of Django forms
 CRISPY_TEMPLATE_PACK = 'bootstrap3'

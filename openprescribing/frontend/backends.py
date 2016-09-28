@@ -3,6 +3,12 @@ from frontend.models import Profile
 
 
 class SecretKeyBackend(object):
+    """Custom authentication backend to support logging in a user from a
+    URL containing a secret key.
+
+    Wired in using the `AUTHENTICATION_BACKENDS` setting.
+
+    """
     def authenticate(self, key=None):
         try:
             profile = Profile.objects.get(key=key)
