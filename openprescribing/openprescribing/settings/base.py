@@ -289,5 +289,6 @@ ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 LOGIN_REDIRECT_URL = "last-bookmark"
 LOGIN_URL = "home"
 EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
-DEFAULT_FROM_EMAIL = "hello@openprescribing.net"
+SUPPORT_EMAIL = 'openprescribing-support@googlegroups.com'
+DEFAULT_FROM_EMAIL = SUPPORT_EMAIL
 CRISPY_TEMPLATE_PACK = 'bootstrap3'
