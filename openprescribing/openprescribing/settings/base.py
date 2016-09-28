@@ -109,7 +109,7 @@ ALLOWED_HOSTS = []
 # See:
 # https://docs.djangoproject.com/en/dev/ref/settings/#std:setting-FIXTURE_DIRS
 FIXTURE_DIRS = (
-    normpath(join(SITE_ROOT, 'fixtures')),
+    normpath(join(SITE_ROOT, 'frontend', 'tests', 'fixtures')),
 )
 # END FIXTURE CONFIGURATION
 
@@ -166,6 +166,7 @@ ROOT_URLCONF = '%s.urls' % SITE_NAME
 # APP CONFIGURATION
 DJANGO_APPS = (
     # Default Django apps:
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
@@ -290,3 +291,10 @@ ANYMAIL = {
 
 ACCOUNT_ADAPTER = 'frontend.account.adapter.MessageBlockingAdapter'
 ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "optional"
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
+LOGIN_REDIRECT_URL = "last-bookmark"
+LOGIN_URL = "home"
+EMAIL_BACKEND = "anymail.backends.mailgun.MailgunBackend"
+CRISPY_TEMPLATE_PACK = 'bootstrap3'

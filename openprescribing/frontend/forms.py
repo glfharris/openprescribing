@@ -57,9 +57,12 @@ class OrgBookmarkForm(forms.Form):
         widget=forms.HiddenInput(),
         required=False
     )
+    # Used by allauth framework for redirection
     next = forms.CharField(widget=forms.HiddenInput())
 
     def clean(self):
+        """Turn entity ids into Practice or PCT instances
+        """
         pct_id = self.cleaned_data['pct']
         practice_id = self.cleaned_data['practice']
         if pct_id:

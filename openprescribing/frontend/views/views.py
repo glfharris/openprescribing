@@ -6,6 +6,8 @@ from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
 from django.conf import settings
 from django.http import Http404
+from django.contrib.auth.models import User
+from django.contrib import messages
 
 from frontend.models import Chemical, Prescription
 from frontend.models import Practice, SHA, PCT, Section
@@ -249,8 +251,6 @@ def _handleCreateBookmark(request, subject_class,
             user = User.objects.create_user(
                 username=email, email=email)
         except IntegrityError:
-            # The design is to go here after email confirmation, but
-            # you can also get here if you type in your email twice
             user = User.objects.get(username=email)
         user = authenticate(key=user.profile.key)
         kwargs = {
