@@ -5,11 +5,10 @@ from pyquery import PyQuery as pq
 from django.conf import settings
 from django.core import mail
 from django.core import management
-from django.test import TestCase
+from django.test import TransactionTestCase
 
 from frontend.models import Measure
 from frontend.models import OrgBookmark
-from frontend.models import Practice
 
 
 def setUpModule():
@@ -21,7 +20,7 @@ def tearDownModule():
     management.call_command('flush', verbosity=0, interactive=False)
 
 
-class TestFrontendViews(TestCase):
+class TestFrontendViews(TransactionTestCase):
     fixtures = ['chemicals', 'sections', 'ccgs',
                 'practices', 'shas', 'prescriptions']
 

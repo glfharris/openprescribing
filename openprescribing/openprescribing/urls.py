@@ -89,30 +89,6 @@ urlpatterns = [
     url(r'^bookmarks/$',
         bookmark_views.BookmarkList.as_view(),
         name='bookmark-list'),
-    url(r'^bookmark/add/$',
-        bookmark_views.SearchBookmarkCreate.as_view(),
-        name='searchbookmark-add'
-    ),
-    url(r'^bookmark/(?P<pk>[0-9]+)/$',
-        bookmark_views.SearchBookmarkUpdate.as_view(),
-        name='searchbookmark-update'
-    ),
-    url(r'^bookmark/(?P<pk>[0-9]+)/delete/$',
-        bookmark_views.SearchBookmarkDelete.as_view(),
-        name='searchbookmark-delete'
-    ),
-    url(r'^orgbookmark/add/$',
-        bookmark_views.OrgBookmarkCreate.as_view(),
-        name='orgbookmark-add'
-    ),
-    url(r'^orgbookmark/(?P<pk>[0-9]+)/$',
-        bookmark_views.OrgBookmarkUpdate.as_view(),
-        name='orgbookmark-update'
-    ),
-    url(r'^orgbookmark/(?P<pk>[0-9]+)/delete/$',
-        bookmark_views.OrgBookmarkDelete.as_view(),
-        name='orgbookmark-delete'
-    ),
     url(r'^last_bookmark/$',
         frontend_views.last_bookmark,
         name='last-bookmark'
