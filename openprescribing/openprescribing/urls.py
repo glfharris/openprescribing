@@ -72,9 +72,6 @@ urlpatterns = [
     # Other files.
     url(r'^robots\.txt/$', TemplateView.as_view(template_name='robots.txt',
                                                 content_type='text/plain')),
-    # auth-related pages
-    url(r'^accounts/profile', profile_views.index,
-        name='profile_index'),
 
     # required by django-allauth
     url(r'^accounts/', include('allauth.urls')),

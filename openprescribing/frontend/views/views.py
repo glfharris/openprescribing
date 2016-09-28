@@ -212,19 +212,24 @@ def last_bookmark(request):
     """
     if request.user.is_authenticated():
         try:
-            ccg = request.user.orgbookmark_set.last().pct
+            last_bookmark = request.user.orgbookmark_set.last()
+            next_url = last_bookmark.dashboard_url()
+            if last_bookmark.practice:
+                entity = 'practice'
+            else:
+                entity = 'CCG'
             messages.success(
                 request,
                 "Thanks, you're now subscribed to monthly "
-                "alerts about this practice")
+                "alerts about this %s!" % entity)
         except AttributeError:
             messages.success(
                 request,
                 "Your account is activated, but you are not subscribed "
-                "to any monthly alerts")
-        return redirect('measures_for_one_ccg', ccg_code=ccg.code)
+                "to any monthly alerts!")
+        return redirect(next_url)
     else:
-        messages.success("Thanks, you're now subscribed to monthly alerts")
+        messages.success("Thanks, you're now subscribed to monthly alerts!")
         return redirect('home')
 
 

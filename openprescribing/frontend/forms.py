@@ -1,6 +1,12 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.utils.safestring import mark_safe
 from frontend.models import PCT, Practice
+
+
+def _name_with_url(bookmark):
+    html = ('<a href="%s">%s</a>' %
+            (bookmark.dashboard_url(), bookmark.name()))
+    return mark_safe(html)
 
 
 class BookmarkListForm(forms.Form):
@@ -21,12 +27,12 @@ class BookmarkListForm(forms.Form):
         super(BookmarkListForm, self).__init__(*args, **kwargs)
         if org_bookmarks:
             self.fields['org_bookmarks'].choices = [
-                (x.id, x.name()) for x in org_bookmarks]
+                (x.id, _name_with_url(x)) for x in org_bookmarks]
         else:
             del self.fields['org_bookmarks']
         if search_bookmarks:
             self.fields['search_bookmarks'].choices = [
-                (x.id, x.name()) for x in search_bookmarks]
+                (x.id, _name_with_url(x)) for x in search_bookmarks]
         else:
             del self.fields['search_bookmarks']
 
@@ -34,6 +40,10 @@ class BookmarkListForm(forms.Form):
 class OrgBookmarkForm(forms.Form):
     email = forms.EmailField(
         label="",
+        error_messages={
+            'required': "This can't be blank!",
+            'invalid': 'Please enter a valid email address'
+        },
         widget=forms.TextInput(
             attrs={
                 'placeholder': 'Email address',

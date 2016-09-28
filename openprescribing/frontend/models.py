@@ -465,9 +465,6 @@ class SearchBookmark(models.Model):
     low_is_good = models.NullBooleanField()
     include_in_email = models.BooleanField()
 
-    def get_absolute_url(self):
-        return reverse('searchbookmark-detail', kwargs={'pk': self.pk})
-
     def __unicode__(self):
         return 'Bookmark: ' + self.name
 
@@ -498,7 +495,7 @@ class OrgBookmark(models.Model):
             return self.practice.name
 
     def get_absolute_url(self):
-        return reverse('orgbookmark-detail', kwargs={'pk': self.pk})
+        return self.dashboard_url()
 
     def __unicode__(self):
         return 'Org Bookmark: ' + self.name()

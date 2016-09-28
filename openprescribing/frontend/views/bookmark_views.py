@@ -35,9 +35,12 @@ class BookmarkList(ListView):
             SearchBookmark.objects.get(pk=b).delete()
             count += 1
         if count > 0:
+            msg = "Unsubscribed from %s alert" % count
+            if count > 1:
+                msg += "s"
             messages.success(
                 request,
-                "Unsubscribed from %s alerts" % count)
+                msg)
         return redirect(
             reverse('bookmark-list'))
 
@@ -67,6 +70,7 @@ class BookmarkList(ListView):
             'count': count,
             'single_bookmark': single_bookmark
         }
+
 
 class SearchBookmarkForm(forms.ModelForm):
     class Meta:
