@@ -193,6 +193,8 @@ DJANGO_APPS = (
     'rest_framework',
     'rest_framework_swagger',
     'corsheaders',
+    # Some PostgreSQL-specific functions
+    'django.contrib.postgres',
 )
 
 # Apps specific for this project go here.

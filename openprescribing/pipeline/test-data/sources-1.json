@@ -1,0 +1,17 @@
+[
+    {
+        "id": "source-a",
+        "title": "Source A",
+        "description": "The first source"
+    },
+    {
+        "id": "source-b",
+        "title": "Source B",
+        "description": "The second source"
+    },
+    {
+        "id": "source-c",
+        "title": "Source C",
+        "description": "The third source"
+    }
+]
