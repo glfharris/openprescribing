@@ -16,6 +16,16 @@ class FetchPatientListSize(TaskDefinition):
     source = 'patient_list_size'
 
 
+class FetchCcgBoundaries(TaskDefinition):
+    task_type = 'manual_fetcher'
+    source = 'ccg_boundaries'
+
+
+class FetchPatientListWeightings(TaskDefinition):
+    task_type = 'manual_fetcher'
+    source = 'patient_list_weightings'
+
+
 class FetchCcgDetails(TaskDefinition):
     task_type = 'fetcher'
     source = 'ccg_details'
@@ -41,11 +51,6 @@ class ImportBnfCodes(TaskDefinition):
 
     def run(self):
         '''import_bnf_codes --filename bnf_codes.csv'''
-
-
-class FetchCcgBoundaries(TaskDefinition):
-    task_type = 'manual_fetcher'
-    source = 'ccg_boundaries'
 
 
 class ImportCcgBoundaries(TaskDefinition):
@@ -89,11 +94,6 @@ class ImportAdqs(TaskDefinition):
 
     def run(self):
         '''import_adqs --filename adqs_.*csv'''
-
-
-class FetchPatientListWeightings(TaskDefinition):
-    task_type = 'manual_fetcher'
-    source = 'patient_list_weightings'
 
 
 class ImportPatientListWeightings(TaskDefinition):
