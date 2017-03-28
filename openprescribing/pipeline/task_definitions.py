@@ -140,54 +140,6 @@ class ImportNhsPostcodeFile(TaskDefinition):
         '''geocode_practices --filename gridall\.csv'''
 
 
-class ImportPrescribing3(TaskDefinition):
-    task_type = 'importer'
-    source = 'prescribing'
-    dependencies = [
-        FetchPrescribing,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
-        ImportCcgDetails,
-        ImportPracticeDetails,
-    ]
-
-    def run(self):
-        '''import_hscic_prescribing --filename T\d+PDPI.*_formatted\.CSV'''
-
-
-class ImportPrescribing2(TaskDefinition):
-    task_type = 'importer'
-    source = 'prescribing'
-    dependencies = [
-        FetchPrescribing,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
-        ImportCcgDetails,
-        ImportPracticeDetails,
-    ]
-
-    def run(self):
-        '''convert_hscic_prescribing --filename T\d+PDPI.*BNFT\.CSV'''
-
-
-class ImportPrescribing1(TaskDefinition):
-    task_type = 'importer'
-    source = 'prescribing'
-    dependencies = [
-        FetchPrescribing,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
-        ImportCcgDetails,
-        ImportPracticeDetails,
-    ]
-
-    def run(self):
-        '''import_practices --hscic_address T\d+ADDR.*\.CSV'''
-
-
 class ImportPrescribing0(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
@@ -202,6 +154,60 @@ class ImportPrescribing0(TaskDefinition):
 
     def run(self):
         '''import_hscic_chemicals --chem_file T\d+CHEM.*\.CSV'''
+
+
+class ImportPrescribing1(TaskDefinition):
+    task_type = 'importer'
+    source = 'prescribing'
+    dependencies = [
+        FetchPrescribing,
+        ImportPrescribing0,
+        ImportBnfCodes,
+        ImportAdqs,
+        ImportNhsPostcodeFile,
+        ImportCcgDetails,
+        ImportPracticeDetails,
+    ]
+
+    def run(self):
+        '''import_practices --hscic_address T\d+ADDR.*\.CSV'''
+
+
+class ImportPrescribing2(TaskDefinition):
+    task_type = 'importer'
+    source = 'prescribing'
+    dependencies = [
+        FetchPrescribing,
+        ImportPrescribing0,
+        ImportPrescribing1,
+        ImportBnfCodes,
+        ImportAdqs,
+        ImportNhsPostcodeFile,
+        ImportCcgDetails,
+        ImportPracticeDetails,
+    ]
+
+    def run(self):
+        '''convert_hscic_prescribing --filename T\d+PDPI.*BNFT\.CSV'''
+
+
+class ImportPrescribing3(TaskDefinition):
+    task_type = 'importer'
+    source = 'prescribing'
+    dependencies = [
+        FetchPrescribing,
+        ImportPrescribing0,
+        ImportPrescribing1,
+        ImportPrescribing2,
+        ImportBnfCodes,
+        ImportAdqs,
+        ImportNhsPostcodeFile,
+        ImportCcgDetails,
+        ImportPracticeDetails,
+    ]
+
+    def run(self):
+        '''import_hscic_prescribing --filename T\d+PDPI.*_formatted\.CSV'''
 
 
 class ImportDispensingPractices(TaskDefinition):

@@ -90,7 +90,7 @@ for source in sources:
                 'source': source_id,
                 'type': 'importer',
                 'command': importer,
-                'dependencies': importer_dependencies,
+                'dependencies': importer_dependencies + importer_ids[::],
             })
             importer_ids.append(importer_id)
 
