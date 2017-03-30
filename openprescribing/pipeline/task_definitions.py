@@ -194,7 +194,7 @@ class ImportDispensingPractices(TaskDefinition):
     source = 'dispensing_practices'
     dependencies = [
         ImportPrescribing1,
-        ImportPrescribing3,
+        ImportPracticeDetails,
     ]
 
     def run(self):
