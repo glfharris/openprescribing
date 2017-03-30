@@ -56,7 +56,7 @@ for source in sources:
                 'source': None,
                 'type': 'other',
                 'command': command,
-                'dependencies': source.get('depends_on', []),
+                'dependencies': source.get('depends_on', []) + [task['id'] for task in before_tasks],
             })
 
     tasks.extend(before_tasks)

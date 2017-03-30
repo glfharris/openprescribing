@@ -272,6 +272,7 @@ class Measures1(TaskDefinition):
     task_type = 'other'
     dependencies = [
         UploadToBigquery,
+        Measures0,
     ]
 
     def run(self):
