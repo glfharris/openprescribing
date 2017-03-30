@@ -139,7 +139,7 @@ class ImportNhsPostcodeFile(TaskDefinition):
         '''geocode_practices --filename gridall\.csv'''
 
 
-class ImportPrescribing0(TaskDefinition):
+class ImportHscicChemicals(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
     dependencies = [
@@ -150,7 +150,7 @@ class ImportPrescribing0(TaskDefinition):
         '''import_hscic_chemicals --chem_file T\d+CHEM.*\.CSV'''
 
 
-class ImportPrescribing1(TaskDefinition):
+class ImportHscicPractices(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
     dependencies = [
@@ -163,7 +163,7 @@ class ImportPrescribing1(TaskDefinition):
         '''import_practices --hscic_address T\d+ADDR.*\.CSV'''
 
 
-class ImportPrescribing2(TaskDefinition):
+class ConvertHscicPrescriptions(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
     dependencies = [
@@ -174,12 +174,12 @@ class ImportPrescribing2(TaskDefinition):
         '''convert_hscic_prescribing --filename T\d+PDPI.*BNFT\.CSV'''
 
 
-class ImportPrescribing3(TaskDefinition):
+class ImportPrescriptions(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
     dependencies = [
-        ImportPrescribing1,
-        ImportPrescribing2,
+        ImportHscicPractices,
+        ConvertHscicPrescriptions,
         ImportBnfCodes,
         ImportCcgDetails,
         ImportPracticeDetails,
@@ -193,7 +193,7 @@ class ImportDispensingPractices(TaskDefinition):
     task_type = 'importer'
     source = 'dispensing_practices'
     dependencies = [
-        ImportPrescribing1,
+        ImportHscicPractices,
         ImportPracticeDetails,
     ]
 
@@ -206,7 +206,7 @@ class ImportPatientListSize(TaskDefinition):
     source = 'patient_list_size'
     dependencies = [
         FetchPatientListSize,
-        ImportPrescribing1,
+        ImportHscicPractices,
         ImportPracticeDetails,
         ImportPatientListWeightings,
     ]
@@ -219,8 +219,8 @@ class UploadToBigquery(TaskDefinition):
     task_type = 'other'
     dependencies = [
         ImportPatientListSize,
-        ImportPrescribing1,
-        ImportPrescribing3,  # Not sure whether this is a dependency
+        ImportHscicPractices,
+        ImportPrescriptions,  # Not sure whether this is a dependency
         ImportCcgDetails,
         ImportPracticeDetails,
     ]
@@ -229,7 +229,7 @@ class UploadToBigquery(TaskDefinition):
         '''runner:bigquery_upload'''
 
 
-class Measures0(TaskDefinition):
+class ImportMeasureDefinitions(TaskDefinition):
     task_type = 'other'
     dependencies = [
         # Since this reads from data in measure_definitions directory,
@@ -241,11 +241,11 @@ class Measures0(TaskDefinition):
         '''import_measures --definitions_only'''
 
 
-class Measures1(TaskDefinition):
+class ImportMeasures(TaskDefinition):
     task_type = 'other'
     dependencies = [
         UploadToBigquery,
-        Measures0,
+        ImportMeasureDefinitions,
     ]
 
     def run(self):
