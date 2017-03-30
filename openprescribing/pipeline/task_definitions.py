@@ -113,7 +113,6 @@ class ImportPracticeDetails(TaskDefinition):
     dependencies = [
         FetchPracticeDetails,
         ImportCcgDetails,
-        ImportPatientListWeightings,
     ]
 
     def run(self):
@@ -145,11 +144,6 @@ class ImportPrescribing0(TaskDefinition):
     source = 'prescribing'
     dependencies = [
         FetchPrescribing,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
-        ImportCcgDetails,
-        ImportPracticeDetails,
     ]
 
     def run(self):
@@ -161,10 +155,6 @@ class ImportPrescribing1(TaskDefinition):
     source = 'prescribing'
     dependencies = [
         FetchPrescribing,
-        ImportPrescribing0,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
         ImportCcgDetails,
         ImportPracticeDetails,
     ]
@@ -178,13 +168,6 @@ class ImportPrescribing2(TaskDefinition):
     source = 'prescribing'
     dependencies = [
         FetchPrescribing,
-        ImportPrescribing0,
-        ImportPrescribing1,
-        ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
-        ImportCcgDetails,
-        ImportPracticeDetails,
     ]
 
     def run(self):
@@ -195,13 +178,9 @@ class ImportPrescribing3(TaskDefinition):
     task_type = 'importer'
     source = 'prescribing'
     dependencies = [
-        FetchPrescribing,
-        ImportPrescribing0,
         ImportPrescribing1,
         ImportPrescribing2,
         ImportBnfCodes,
-        ImportAdqs,
-        ImportNhsPostcodeFile,
         ImportCcgDetails,
         ImportPracticeDetails,
     ]
@@ -214,11 +193,8 @@ class ImportDispensingPractices(TaskDefinition):
     task_type = 'importer'
     source = 'dispensing_practices'
     dependencies = [
-        ImportPrescribing0,
         ImportPrescribing1,
-        ImportPrescribing2,
         ImportPrescribing3,
-        ImportPracticeDetails,
     ]
 
     def run(self):
@@ -230,10 +206,7 @@ class ImportPatientListSize(TaskDefinition):
     source = 'patient_list_size'
     dependencies = [
         FetchPatientListSize,
-        ImportPrescribing0,
         ImportPrescribing1,
-        ImportPrescribing2,
-        ImportPrescribing3,
         ImportPracticeDetails,
         ImportPatientListWeightings,
     ]
@@ -246,10 +219,8 @@ class UploadToBigquery(TaskDefinition):
     task_type = 'other'
     dependencies = [
         ImportPatientListSize,
-        ImportPrescribing0,
         ImportPrescribing1,
-        ImportPrescribing2,
-        ImportPrescribing3,
+        ImportPrescribing3,  # Not sure whether this is a dependency
         ImportCcgDetails,
         ImportPracticeDetails,
     ]
@@ -261,7 +232,6 @@ class UploadToBigquery(TaskDefinition):
 class Measures0(TaskDefinition):
     task_type = 'other'
     dependencies = [
-        UploadToBigquery,
     ]
 
     def run(self):
