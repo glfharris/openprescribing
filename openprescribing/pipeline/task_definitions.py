@@ -232,6 +232,9 @@ class UploadToBigquery(TaskDefinition):
 class Measures0(TaskDefinition):
     task_type = 'other'
     dependencies = [
+        # Since this reads from data in measure_definitions directory,
+        # presumably we should re-run this when that data is updated.  However,
+        # there is no fetcher for this data.
     ]
 
     def run(self):
