@@ -11,11 +11,6 @@ class FetchAdqs(TaskDefinition):
     source = 'adqs'
 
 
-class FetchPatientListSize(TaskDefinition):
-    task_type = 'manual_fetcher'
-    source = 'patient_list_size'
-
-
 class FetchCcgBoundaries(TaskDefinition):
     task_type = 'manual_fetcher'
     source = 'ccg_boundaries'
@@ -24,6 +19,14 @@ class FetchCcgBoundaries(TaskDefinition):
 class FetchPatientListWeightings(TaskDefinition):
     task_type = 'manual_fetcher'
     source = 'patient_list_weightings'
+
+
+class FetchPatientListSize(TaskDefinition):
+    task_type = 'fetcher'
+    source = 'patient_list_size'
+
+    def run(self):
+        '''hscic_list_sizes.py'''
 
 
 class FetchCcgDetails(TaskDefinition):
@@ -76,12 +79,17 @@ class ImportCcgDetails(TaskDefinition):
         '''import_org_names --ccg eccg.csv'''
 
 
-class FetchPrescribing(TaskDefinition):
+class FetchPrescribingMetadata(TaskDefinition):
     task_type = 'fetcher'
-    source = 'prescribing'
+    source = 'prescribing_metadata'
 
     def run(self):
         '''hscic_prescribing.py --most_recent_date'''
+
+
+class FetchPrescribing(TaskDefinition):
+    task_type = 'manual_fetcher'
+    source = 'prescribing'
 
 
 class ImportAdqs(TaskDefinition):
@@ -141,9 +149,9 @@ class ImportNhsPostcodeFile(TaskDefinition):
 
 class ImportHscicChemicals(TaskDefinition):
     task_type = 'importer'
-    source = 'prescribing'
+    source = 'prescribing_metadata'
     dependencies = [
-        FetchPrescribing,
+        FetchPrescribingMetadata,
     ]
 
     def run(self):
@@ -152,9 +160,9 @@ class ImportHscicChemicals(TaskDefinition):
 
 class ImportHscicPractices(TaskDefinition):
     task_type = 'importer'
-    source = 'prescribing'
+    source = 'prescribing_metadata'
     dependencies = [
-        FetchPrescribing,
+        FetchPrescribingMetadata,
         ImportCcgDetails,
         ImportPracticeDetails,
     ]
@@ -171,7 +179,7 @@ class ConvertHscicPrescriptions(TaskDefinition):
     ]
 
     def run(self):
-        '''convert_hscic_prescribing --filename T\d+PDPI.*BNFT\.CSV'''
+        '''convert_hscic_prescribing --filename .*Detailed_Prescribing_Information.csv'''
 
 
 class ImportPrescriptions(TaskDefinition):
@@ -186,7 +194,7 @@ class ImportPrescriptions(TaskDefinition):
     ]
 
     def run(self):
-        '''import_hscic_prescribing --filename T\d+PDPI.*_formatted\.CSV'''
+        '''import_hscic_prescribing --filename .*Detailed_Prescribing_Information_formatted.CSV'''
 
 
 class ImportDispensingPractices(TaskDefinition):
@@ -212,7 +220,7 @@ class ImportPatientListSize(TaskDefinition):
     ]
 
     def run(self):
-        '''import_list_sizes --filename Patient_List_Size.*csv'''
+        '''import_list_sizes --filename patient_list_size_new.csv'''
 
 
 class UploadToBigquery(TaskDefinition):
