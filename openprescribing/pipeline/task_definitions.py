@@ -223,6 +223,25 @@ class ImportPatientListSize(TaskDefinition):
         '''import_list_sizes --filename patient_list_size_new.csv'''
 
 
+class UploadToStorage(TaskDefinition):
+    task_type = 'other'
+    dependencies = [
+        FetchAdqs,
+        FetchBnfCodes,
+        FetchCcgBoundaries,
+        FetchCcgDetails,
+        FetchNhsPostcodeFile,
+        FetchPatientListSize,
+        FetchPatientListWeightings,
+        FetchPracticeDetails,
+        FetchPrescribing,
+        FetchPrescribingMetadata,
+    ]
+
+    def run(self):
+        '''runner:BigQueryUploader.upload_all_to_storage'''
+
+
 class UploadToBigquery(TaskDefinition):
     task_type = 'other'
     dependencies = [
@@ -231,6 +250,7 @@ class UploadToBigquery(TaskDefinition):
         ImportPrescriptions,  # Not sure whether this is a dependency
         ImportCcgDetails,
         ImportPracticeDetails,
+        UploadToStorage,
     ]
 
     def run(self):
